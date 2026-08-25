@@ -1,0 +1,2536 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DRM AI 40분 첫걸음</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#1a1d21; --ink2:#5b6570; --line:#dfe3e8;
+  --blue:#2e75b6; --blue-d:#1f3864; --blue-l:#deebf7;
+  --green:#2a6f2d; --green-l:#e4f2e5; --orange:#c55a11; --orange-l:#fce4d6;
+  --red:#c00000; --yellow:#fff2cc; --gray:#8a9199; --gray-l:#f2f3f5;
+  --excel:#217346;
+  --on-accent:#fff;          /* 파랑/초록 배경 위 글자색 */
+  --toast-bg:#1f3864; --toast-fg:#fff;
+  --hl-bg:#ffe38a; --hl-fg:#111;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171a; --panel:#1c2024; --ink:#e8eaed; --ink2:#a3acb5; --line:#2e343b;
+    --blue:#5fa3e0; --blue-d:#9dc6ee; --blue-l:#1d2c3d;
+    --green:#6fbf73; --green-l:#1b2b1d; --orange:#e08b4c; --orange-l:#33241a;
+    --red:#ff7b7b; --yellow:#3a3320; --gray:#8a9199; --gray-l:#22262b;
+    --excel:#3a9e69;
+    --on-accent:#0d1b2a;
+    --toast-bg:#e8eaed; --toast-fg:#14171a;
+    --hl-bg:#8a6d1f; --hl-fg:#fff8e1;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171a; --panel:#1c2024; --ink:#e8eaed; --ink2:#a3acb5; --line:#2e343b;
+  --blue:#5fa3e0; --blue-d:#9dc6ee; --blue-l:#1d2c3d;
+  --green:#6fbf73; --green-l:#1b2b1d; --orange:#e08b4c; --orange-l:#33241a;
+  --red:#ff7b7b; --yellow:#3a3320; --gray:#8a9199; --gray-l:#22262b;
+  --excel:#3a9e69;
+  --on-accent:#0d1b2a;
+  --toast-bg:#e8eaed; --toast-fg:#14171a;
+  --hl-bg:#8a6d1f; --hl-fg:#fff8e1;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Segoe UI",sans-serif;
+  font-size:15px;line-height:1.65;-webkit-text-size-adjust:100%}
+h1,h2,h3{line-height:1.35;margin:0}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+code{font-family:Consolas,"D2Coding",monospace;background:var(--gray-l);
+  padding:1px 5px;border-radius:4px;font-size:.92em}
+
+/* ── layout ───────────────────────────────── */
+.wrap{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+
+.side{background:var(--panel);border-right:1px solid var(--line);
+  padding:18px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+@media(max-width:900px){.side{position:static;height:auto;border-right:0;
+  border-bottom:1px solid var(--line)}}
+.brand{font-size:19px;font-weight:800;color:var(--blue-d);letter-spacing:-.4px}
+.brand small{display:block;font-size:11.5px;font-weight:600;color:var(--ink2);
+  letter-spacing:0;margin-top:3px}
+.bar{height:7px;border-radius:99px;background:var(--gray-l);margin:14px 0 4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--green);width:0;
+  transition:width .45s cubic-bezier(.4,0,.2,1)}
+.barlab{font-size:11.5px;color:var(--ink2);margin-bottom:14px}
+
+.nav{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.nav button{width:100%;text-align:left;background:none;border:0;border-radius:8px;
+  padding:8px 10px;color:var(--ink);display:flex;gap:9px;align-items:flex-start;
+  font-size:13.5px;line-height:1.4}
+.nav button:hover{background:var(--gray-l)}
+.nav button[aria-current="true"]{background:var(--blue-l);color:var(--blue-d);font-weight:700}
+.nav .n{flex:0 0 21px;height:21px;border-radius:99px;background:var(--gray-l);
+  color:var(--ink2);font-size:11px;font-weight:800;display:grid;place-items:center;margin-top:1px}
+.nav button[aria-current="true"] .n{background:var(--blue);color:var(--on-accent)}
+.nav .done .n{background:var(--green);color:var(--on-accent)}
+.nav .mm{display:block;font-size:11px;color:var(--ink2);font-weight:400}
+
+.main{padding:26px 30px 90px;max-width:1080px;min-width:0;overflow-x:hidden}
+@media(max-width:900px){.main{padding:18px 14px 70px}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+  padding:20px 22px;margin:16px 0;min-width:0}
+.card h2{font-size:20px;color:var(--blue-d);margin-bottom:4px}
+.card h3{font-size:15.5px;color:var(--blue);margin:18px 0 8px}
+.lead{color:var(--ink2);font-size:13.5px;margin:2px 0 0}
+.pane{display:none}.pane.on{display:block}
+
+.pill{display:inline-block;font-size:11.5px;font-weight:700;padding:2.5px 9px;
+  border-radius:99px;background:var(--blue-l);color:var(--blue-d);margin-right:6px}
+.pill.g{background:var(--green-l);color:var(--green)}
+.pill.o{background:var(--orange-l);color:var(--orange)}
+
+.warn,.tip,.note{border-radius:9px;padding:11px 14px;margin:11px 0;font-size:13.5px}
+.warn{background:var(--yellow);border-left:4px solid var(--orange);color:var(--ink)}
+.tip{background:var(--green-l);border-left:4px solid var(--green)}
+.note{background:var(--blue-l);border-left:4px solid var(--blue)}
+.warn b,.tip b{color:inherit}
+
+ol.steps{margin:10px 0;padding-left:0;list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;position:relative;padding:7px 0 7px 34px;
+  border-bottom:1px dashed var(--line);font-size:14px}
+ol.steps li:last-child{border-bottom:0}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:22px;height:22px;
+  border-radius:99px;background:var(--blue);color:var(--on-accent);font-size:11.5px;font-weight:800;
+  display:grid;place-items:center}
+
+.btn{background:var(--blue);color:var(--on-accent);border:0;border-radius:8px;
+  padding:9px 17px;font-weight:700;font-size:14px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn.gy{background:transparent;color:var(--ink2);border:1.5px solid var(--line);
+  padding:7.5px 15.5px}
+.btn.gy:hover{border-color:var(--blue);color:var(--blue);filter:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.fineprint{font-size:12px;color:var(--ink2);margin:10px 0 0}
+
+table.t{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}
+table.t th,table.t td{border:1px solid var(--line);padding:7px 9px;text-align:left;
+  vertical-align:top}
+table.t th{background:var(--blue-l);color:var(--blue-d);font-weight:700}
+.scrollx{overflow-x:auto;max-width:100%}
+.pane,.pane>*{min-width:0}
+</style>
+<style>
+/* ── 엑셀 흉내 ─────────────────────────────── */
+.xl{border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);margin:14px 0;min-width:0;max-width:100%}
+.xl>.xltabs{border-radius:9px 9px 0 0}
+.xl>.statusbar{border-radius:0 0 9px 9px}
+.xl>.ribbon:last-child{border-bottom:0;border-radius:0 0 9px 9px}
+.xl>.grid{overflow:auto}
+.xltabs{display:flex;background:var(--gray-l);border-bottom:1px solid var(--line);
+  font-size:12.5px;padding:0 6px;overflow-x:auto;scrollbar-width:thin}
+.xltabs span{padding:7px 13px;color:var(--ink2);white-space:nowrap;flex:0 0 auto}
+.xltabs span.on{background:var(--panel);color:var(--excel);font-weight:800;
+  border-top:2.5px solid var(--excel)}
+.xltabs span.live{cursor:pointer}
+.xltabs span.live:hover{background:var(--blue-l);color:var(--blue-d)}
+.xltabs span:not(.live){opacity:.7;cursor:not-allowed}
+table.g td.edit{background:var(--yellow);cursor:text}
+table.g td.edit:hover{outline:2px solid var(--orange);outline-offset:-2px}
+.dlbtn{display:inline-block;background:var(--blue);color:#fff;text-decoration:none;
+  padding:9px 16px;border-radius:8px;font-size:14px;font-weight:800;margin:0 8px 6px 0}
+.dlbtn:hover{filter:brightness(1.1)}
+.dlbtn.ghost{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+table.g td.edit.dim{background:var(--gray-l);cursor:default;opacity:.7}
+table.g td.edit.dim>.cw::before{color:var(--ink2)}
+table.g td.edit>.cw::before{content:'✎ ';color:var(--orange);font-weight:800}
+table.g td.await{outline:3px solid var(--orange);outline-offset:-3px;
+  animation:cellpulse 1.4s ease-in-out infinite}
+@keyframes cellpulse{0%,100%{box-shadow:inset 0 0 0 0 rgba(197,90,17,.45)}
+  50%{box-shadow:inset 0 0 0 6px rgba(197,90,17,0)}}
+table.g td .cellin{width:100%;box-sizing:border-box;border:2px solid var(--excel);
+  padding:2px 4px;font-size:11.5px;font-family:inherit;background:var(--panel);color:var(--ink)}
+.ribbon{background:var(--panel);border-bottom:1px solid var(--line);padding:8px 10px;
+  display:flex;align-items:center;gap:12px;position:relative}
+.rgroup{border:1px solid var(--line);border-radius:8px;padding:5px 10px;text-align:center}
+.rgroup .lbl{font-size:10.5px;color:var(--ink2);margin-top:3px}
+.rbtn{background:linear-gradient(#fff,#eef2f6);border:1px solid var(--line);border-radius:7px;
+  padding:6px 12px;font-size:12.5px;font-weight:800;color:var(--blue-d);
+  display:flex;flex-direction:column;align-items:center;gap:2px}
+:root[data-theme="dark"] .rbtn{background:linear-gradient(#2b3138,#20252a)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .rbtn{
+  background:linear-gradient(#2b3138,#20252a)}}
+.rbtn .ico{font-size:17px}
+.rbtn:hover{background:var(--blue-l)}
+.rbtn.pulse{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(46,117,182,.55)}
+  50%{box-shadow:0 0 0 7px rgba(46,117,182,0)}}
+
+.menu{position:absolute;top:100%;left:10px;z-index:40;background:var(--panel);
+  border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 32px rgba(0,0,0,.22);
+  min-width:250px;padding:5px;display:none}
+.menu.on{display:block}
+.menu .mi{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;
+  font-size:13px;cursor:pointer;color:var(--ink);position:relative}
+.menu .mi:hover{background:var(--blue-l)}
+.menu .mi .arw{margin-left:auto;color:var(--ink2);font-size:11px}
+.menu .sep{height:1px;background:var(--line);margin:4px 6px}
+.submenu{position:absolute;left:100%;top:-4px;background:var(--panel);
+  border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 32px rgba(0,0,0,.22);
+  min-width:430px;padding:5px;display:none;z-index:41}
+/* 옆으로 펼칠 자리가 모자라는 폭에서는 아래로 접어 편다 */
+@media(max-width:1100px){
+  .menu .mi{flex-wrap:wrap}
+  .submenu{position:static;flex:1 0 100%;min-width:0;box-shadow:none;
+    border:0;border-left:2px solid var(--blue);border-radius:0;
+    margin:5px 0 2px 6px;padding:2px 0 2px 8px}
+  .submenu .mi{padding:6px 8px}
+}
+.submenu.on{display:block}
+.submenu .mi{font-size:12.5px;line-height:1.35}
+.mi.hot{background:var(--yellow);font-weight:700}
+
+.grid{overflow:auto;max-height:330px;max-width:100%}
+table.g{border-collapse:collapse;font-size:11.5px;table-layout:fixed;width:max-content;
+  min-width:100%}
+table.g th,table.g td{border:1px solid var(--line);padding:3px 6px;
+  vertical-align:top;overflow:hidden;white-space:pre-wrap;word-break:break-all}
+table.g thead th{background:var(--gray-l);color:var(--ink2);font-weight:700;
+  text-align:center;position:sticky;top:0;z-index:2;height:22px}
+table.g tbody th{background:var(--gray-l);color:var(--ink2);font-weight:700;
+  text-align:center;width:34px;position:sticky;left:0;z-index:1}
+table.g td.pad,table.g th.pad{background:var(--gray-l);border-left:1px solid var(--line);
+  cursor:default;padding:0}
+table.g td.merged{cursor:default}
+table.g td.merged>.cw{white-space:pre-wrap;word-break:keep-all}
+table.g.picking{touch-action:none;-webkit-user-select:none;user-select:none}
+table.g td{background:var(--panel);cursor:cell;height:26px;padding:0}
+table.g td{position:relative}
+table.g td>.cw{max-height:52px;overflow:hidden;padding:3px 6px;white-space:pre-wrap;
+  word-break:break-all;line-height:1.45}
+table.g td.more>.cw::after{content:'';position:absolute;left:1px;right:1px;bottom:1px;height:16px;
+  background:linear-gradient(to bottom,transparent,var(--panel));pointer-events:none}
+table.g td.more::after{content:'⤢ 전체';position:absolute;right:2px;bottom:1px;
+  font-size:9px;font-weight:700;color:var(--blue);background:var(--panel);
+  padding:0 3px;border-radius:3px;pointer-events:none}
+table.g td.more:hover{outline:1.5px dashed var(--blue);outline-offset:-1.5px}
+table.g td.hdr>.cw{max-height:none;text-align:center;font-weight:700}
+table.g td.hdr{background:var(--blue);color:var(--on-accent);font-weight:700;text-align:center;
+  cursor:default;vertical-align:middle}
+table.g td.sel{outline:2.5px solid var(--excel);outline-offset:-2.5px;
+  background:var(--green-l);
+  background:color-mix(in srgb,var(--excel) 12%,var(--panel))}
+table.g td.filled{background:var(--green-l)}
+table.g td.guide>.cw{color:var(--ink2);font-style:italic}
+table.g td.ok>.cw{color:var(--green);font-weight:800;text-align:center}
+table.g td.fail>.cw{color:var(--red);font-weight:800;text-align:center}
+table.g td.banner{background:#e1f0e1;color:#005000;font-weight:800}
+table.g td.banner>.cw{max-height:none;padding:5px 8px}
+:root[data-theme="dark"] table.g td.banner{background:#1b3320;color:#a8e6b0}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) table.g td.banner{
+  background:#1b3320;color:#a8e6b0}}
+table.g mark.kw{background:none;color:#d40000;font-weight:800}
+:root[data-theme="dark"] table.g mark.kw{color:#ff8a8a}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) table.g mark.kw{color:#ff8a8a}}
+table.g.picking td:hover{background:var(--blue-l)}
+.gridbar{display:flex;gap:10px;align-items:center;padding:6px 10px;font-size:12px;
+  background:var(--gray-l);border-bottom:1px solid var(--line);color:var(--ink2);
+  flex-wrap:wrap}
+.gridbar.picking{background:var(--yellow);color:var(--ink)}
+.gridbar.awaiting{background:var(--yellow);color:var(--ink)}
+.gridbar.awaiting [data-msg]{font-weight:800}
+.gridbar .quit{margin-left:auto;background:var(--panel);border:1px solid var(--line);
+  border-radius:5px;padding:2px 10px;font-size:11.5px;font-weight:700;color:var(--ink2);
+  cursor:pointer;font-family:inherit}
+.gridbar .quit:hover{border-color:var(--orange);color:var(--orange)}
+.sheetnote{background:var(--blue-l);color:var(--blue-d);font-size:11.5px;line-height:1.5;
+  padding:6px 11px;border-bottom:1px solid var(--line)}
+.gridbar .pk{margin-left:auto;font-weight:700;color:var(--orange)}
+.namebox{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:2px 9px;font-weight:800;color:var(--ink);min-width:78px;text-align:center}
+.statusbar{background:var(--gray-l);border-top:1px solid var(--line);padding:5px 11px;
+  font-size:11.5px;color:var(--ink2);display:flex;justify-content:space-between}
+.statusbar .st{font-weight:700;color:var(--blue-d)}
+
+/* ── VBA 대화상자 ──────────────────────────── */
+.mask{position:fixed;inset:0;background:rgba(10,14,20,.5);z-index:900;
+  display:none;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto}
+#dlgbox{width:100%;display:flex;justify-content:center;align-items:flex-start}
+.mask.on{display:flex}
+.dlg{background:#f0f0f0;color:#111;border:1px solid #7a7a7a;border-radius:7px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);width:min(500px,100%);margin:auto;
+  font-family:"Malgun Gothic","맑은 고딕",sans-serif;overflow:hidden;
+  max-height:calc(100vh - 26px);max-height:calc(100dvh - 26px);
+  display:flex;flex-direction:column}
+.dlg>*{flex:0 0 auto}
+.dlg .tt{background:linear-gradient(#3b6fb0,#25548c);color:#fff;font-size:12.5px;
+  font-weight:700;padding:6px 11px;display:flex;justify-content:space-between;
+  align-items:center;gap:8px}
+.dlg .tt .x{background:none;border:0;color:#fff;font-size:14px;line-height:1;
+  padding:2px 6px;border-radius:3px;font-weight:700}
+.dlg .tt .x:hover{background:#c0392b}
+.dlg .wizstep{background:#dbe7f6;color:#1b3d63;font-size:11.5px;font-weight:800;
+  padding:5px 12px;border-bottom:1px solid #b9cde6;display:flex;
+  justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.dlg .wizstep .sq{font-weight:600;opacity:.85}
+.dlg .inbig{height:96px;resize:vertical;font-family:Consolas,"D2Coding",monospace;
+  font-size:12px;line-height:1.5}
+.dlg .bd{padding:16px 18px;font-size:13px;white-space:pre-wrap;line-height:1.55;
+  flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere}
+.dlg .bd .ic{float:left;font-size:26px;margin:0 13px 6px 0}
+.dlg .bd:has(>.ic){display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 13px;align-items:start}
+.dlg .bd:has(>.ic)>.ic{float:none;margin:0}
+.dlg .in{width:100%;padding:6px 9px;border:1px solid #7a7a7a;border-radius:3px;
+  font-size:13.5px;margin-top:10px;background:#fff;color:#111;
+  font-family:"Malgun Gothic",sans-serif}
+.dlg .bt{display:flex;gap:8px;justify-content:flex-end;padding:10px 16px 14px;
+  background:#f0f0f0}
+.dlg .bt button{min-width:82px;padding:6px 14px;border:1px solid #8a8a8a;border-radius:4px;
+  background:linear-gradient(#fdfdfd,#e6e6e6);color:#111;font-size:12.5px;font-weight:600}
+.dlg .bt button:hover{background:linear-gradient(#fff,#dbeaf8);border-color:#2e75b6}
+.dlg .bt button.def{border:2px solid #2e75b6;font-weight:800}
+.dlg .hint{background:#fff8dc;border-top:1px solid #e0d8b0;padding:8px 16px;
+  font-size:12px;color:#7a5c00;max-height:26vh;overflow-y:auto;overflow-wrap:anywhere}
+.dlg .err{background:#ffe9e9;border-top:1px solid #f0b8b8;padding:8px 16px;
+  font-size:12px;color:#a00;font-weight:700;max-height:24vh;overflow-y:auto;
+  overflow-wrap:anywhere}
+
+/* 프롬프트 관리 폼 */
+.pform{width:min(720px,96vw)}
+.pform .row{display:flex;gap:12px;padding:0 16px 12px;flex:0 1 auto;min-height:0}
+.pform .col{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.pform label{display:block;font-size:12px;font-weight:700;margin:10px 0 4px}
+.pform select{width:100%;padding:5px;font-size:12.5px;border:1px solid #7a7a7a;
+  background:#fff;color:#111;font-family:inherit}
+.pform textarea{width:100%;height:190px;min-height:88px;max-height:36vh;
+  padding:8px;font-size:11.5px;flex:1 1 auto;box-sizing:border-box;
+  border:1px solid #7a7a7a;background:#fff;color:#111;resize:vertical;
+  font-family:Consolas,"D2Coding",monospace;line-height:1.5}
+.pform .pfbtns{display:flex;flex-direction:column;gap:6px;width:172px;flex:0 0 172px;
+  align-self:flex-start}
+.pform .pfbtns button{padding:7px;font-size:11.5px;border:1px solid #8a8a8a;
+  border-radius:4px;background:linear-gradient(#fdfdfd,#e6e6e6);color:#111;font-weight:600}
+.pform .pfbtns button.pfmain{background:linear-gradient(#2f79ba,#1c5386);color:#fff;
+  border-color:#1f3864;font-weight:800}
+
+@media(max-width:620px){
+  .pform .row{flex-direction:column}
+  .pform .pfbtns{width:auto;flex:0 0 auto;
+    display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .pform .pfbtns button.pfmain{grid-column:1/-1}
+  .pform textarea{max-height:26vh}
+}
+/* ── 퀴즈 ─────────────────────────────────── */
+.quiz{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 18px}
+.q{margin:0 0 18px;padding-bottom:14px;border-bottom:1px dashed var(--line)}
+.q:nth-last-child(2){border-bottom:0;margin-bottom:6px}
+.q p{font-weight:700;margin:0 0 9px;font-size:14px}
+.opt{display:block;width:100%;text-align:left;background:var(--panel);
+  border:1.5px solid var(--line);border-radius:8px;padding:9px 13px;margin-bottom:6px;
+  font-size:13.5px;color:var(--ink)}
+.opt:hover{border-color:var(--blue);background:var(--blue-l)}
+.opt.ok{border-color:var(--green);background:var(--green-l);font-weight:700}
+.opt.no{border-color:var(--red);background:var(--yellow)}
+.qfb{font-size:13px;margin-top:7px;padding:9px 12px;border-radius:8px;display:none}
+.qfb.on{display:block}
+.qfb.ok{background:var(--green-l);color:var(--green)}
+.qfb.no{background:var(--yellow);color:var(--orange)}
+
+/* ── 실수 예방 카드 ───────────────────────── */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(238px,100%),1fr));
+  gap:11px;margin:12px 0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--red);
+  border-radius:9px;padding:12px 14px}
+.pcard h4{margin:0 0 5px;font-size:13.5px;color:var(--red)}
+.pcard p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.55}
+.pcard .fix{display:block;margin-top:7px;font-size:12.5px;color:var(--green);font-weight:700}
+
+/* ── 프롬프트 빌더 ─────────────────────────── */
+.pb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media(max-width:800px){.pb{grid-template-columns:minmax(0,1fr)}}
+.pb label{display:block;font-size:12.5px;font-weight:700;margin:9px 0 3px;color:var(--ink2)}
+.pb select,.pb input{width:100%;padding:7px 9px;border:1px solid var(--line);
+  border-radius:7px;font-size:13px;background:var(--panel);color:var(--ink);
+  font-family:inherit}
+.pbout{background:var(--green-l);border:1px solid var(--green);border-radius:9px;
+  padding:13px 15px;font-size:13px;line-height:1.7;min-height:120px;white-space:pre-wrap}
+.pbf{font-family:Consolas,"D2Coding",monospace;font-size:11px;color:var(--ink2);
+  background:var(--gray-l);border-radius:7px;padding:9px 11px;margin-top:9px;
+  word-break:break-all;line-height:1.6}
+.timer{font-variant-numeric:tabular-nums;font-weight:800;color:var(--blue-d)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--toast-bg);color:var(--toast-fg);padding:11px 22px;border-radius:99px;font-size:13.5px;
+  font-weight:700;z-index:999;opacity:0;
+  transition:opacity .3s,transform .3s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head><body>
+<div class="wrap">
+<aside class="side">
+  <div class="brand">DRM AI 40분 첫걸음<small>엑셀 추가기능 v10.0 · 처음 쓰는 선생님용</small></div>
+  <div class="bar"><i id="pbar"></i></div>
+  <div class="barlab"><span id="pnum">0</span>/7 마침 ·
+    <span class="timer" id="clock">40:00</span>
+    <button id="pausebtn" style="border:0;background:none;color:var(--ink2);cursor:pointer;
+      font-size:11px;padding:0 3px" onclick="togglePause()">⏸ 멈춤</button><br>
+    <span style="font-size:10.5px">★ 표시 4개 = 핵심 40분 · 전부 하면 약 72분</span></div>
+  <ul class="nav" id="nav"></ul>
+  <div style="margin-top:18px;display:flex;gap:6px">
+    <button class="btn ghost" style="flex:1;padding:6px;font-size:12px" onclick="toggleTheme()">화면 밝기</button>
+    <button class="btn ghost" style="flex:1;padding:6px;font-size:12px" onclick="resetAll()">처음부터</button>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- ══ 0. 시작하기 ══ -->
+<section class="pane on" id="p0">
+  <div class="card">
+    <span class="pill">0단계</span><span class="pill g">3분</span>
+    <h2>시작하기 전에 — 이 창은 무엇인가요</h2>
+    <p class="lead">엑셀을 켜지 않고, 돈 한 푼 쓰지 않고, 실제와 똑같은 순서를 먼저 손으로 익히는 연습장입니다.</p>
+
+    <div class="note"><b>여기서 누르는 버튼과 뜨는 창은 실제 추가기능의 문구 그대로입니다.</b>
+      다만 인터넷으로 나가지 않으므로 요금이 발생하지 않고, 결과는 미리 준비된 예시가 채워집니다.
+      순서와 화면에 익숙해지는 것이 목적입니다.
+      <br><br>휴대폰·태블릿에서도 읽으실 수 있지만, <b>칸을 끌어 범위를 고르는 연습</b>은
+      마우스가 있는 PC에서 하시는 편이 훨씬 수월합니다.</div>
+
+    <h3>40분을 이렇게 씁니다</h3>
+    <div class="note"><b>★ 표시 네 개(0·1·2·5)가 핵심 40분 코스입니다.</b>
+      이 넷만 하시면 이 추가기능의 8할을 쓰실 수 있습니다.
+      나머지 셋(3·4·6)은 시간이 되실 때 하시면 됩니다. 전부 하면 약 72분입니다.
+      왼쪽 목록은 배우기 좋은 순서(0→1→2→3→4→5→6)로 놓았으니 그대로 따라가셔도 됩니다.</div>
+    <div class="scrollx"><table class="t">
+      <tr><th style="width:52px">시간</th><th style="width:200px">미션</th><th>배우는 것</th></tr>
+      <tr><td>★ 3분</td><td>0. 메뉴 찾기</td><td>리본 어디에 있는지, 메뉴가 어떻게 생겼는지</td></tr>
+      <tr><td>★ 12분</td><td>1. 행 단위 병렬 처리</td><td>12명 생기부 문구를 한 번에 — <b>가장 많이 쓰는 기능</b></td></tr>
+      <tr><td>★ 9분</td><td>2. 정리하고 나누기</td><td>마크다운 기호 지우기 · 한 칸을 세 칸으로</td></tr>
+      <tr><td>★ 18분</td><td>5. 시험 출제 풀코스</td><td>분류표 → 문항 15개 → 한글 시험지·정답지 (③ 삽화는 심화)</td></tr>
+      <tr style="opacity:.75"><td>14분</td><td>3. 파일과 메일</td><td>파일 이름 12개 한 번에 · 개별 메일 발송 (메뉴를 두 번)</td></tr>
+      <tr style="opacity:.75"><td>7분</td><td>4. 절약 모드</td><td>같은 일을 반값에 — Batch API</td></tr>
+      <tr style="opacity:.75"><td>9분</td><td>6. 문항 점검</td><td>올인원 도우미로 자르고, 12문항 오류 한 번에</td></tr>
+    </table></div>
+
+    <h3>실습 엑셀 파일 내려받기</h3>
+    <p style="font-size:13.5px">이 연습창만으로도 순서는 다 익히실 수 있습니다.
+      실제 추가기능으로 한 번 더 해 보시려면 아래에서 실습 파일을 받으세요.
+      각 파일 첫 시트 <b>[① 시작 안내]</b> 에 이 창과 똑같은 순서가 적혀 있습니다.</p>
+    <p style="margin:10px 0"><a class="dlbtn" href="DRM_AI_%EC%B2%98%EC%9D%8C40%EB%B6%84_%EC%8B%A4%EC%8A%B5%EC%9E%90%EB%A3%8C.zip"
+      download="DRM_AI_처음40분_실습자료.zip">전체 한 번에 받기 (ZIP · 약 0.3MB)</a>
+      <a class="dlbtn ghost" href="index.html">안내 페이지로 돌아가기</a></p>
+    <p style="font-size:12.5px;color:var(--ink2);margin:0">
+      ZIP 안에 실습1~6 엑셀과 [연습용_파일들] · [프롬프트_모음] 폴더가 모두 들어 있습니다.
+      실습3·실습6 은 폴더 안 파일을 쓰는 미션이라 낱개가 아니라 ZIP 으로 받으셔야 합니다.</p>
+    <div class="tip"><b>가장 좋은 방법</b> — 이 창에서 한 미션을 연습한 뒤, 곧바로 같은 번호의 실습 엑셀 파일을 열어
+      진짜로 한 번 더 해 보세요. 손이 기억합니다.
+      인터넷에서 받은 엑셀은 <b>[보호된 보기]</b> 로 열리니 위쪽 노란 띠의 <b>[편집 사용]</b> 을 먼저 누르세요.</div>
+
+    <h3>먼저 알아 둘 딱 세 가지</h3>
+    <div class="cards">
+      <div class="pcard"><h4>되돌리기(Ctrl+Z)가 안 됩니다</h4>
+        <p>이 추가기능이 셀에 쓴 값은 엑셀의 되돌리기로 되살릴 수 없습니다.</p>
+        <span class="fix">→ 결과 열은 언제나 <b>비어 있는 열</b>로 지정하세요.</span></div>
+      <div class="pcard"><h4>진행률 퍼센트가 없습니다</h4>
+        <p>화면 아래 상태표시줄에 한 줄만 바뀝니다. 멈춘 것처럼 보여도 도는 중입니다.</p>
+        <span class="fix">→ 엑셀을 건드리지 말고 완료 창이 뜰 때까지 기다리세요.</span></div>
+      <div class="pcard"><h4>시작하면 못 멈춥니다</h4>
+        <p>실행이 시작된 뒤에는 ESC로 중단할 수 없습니다.</p>
+        <span class="fix">→ 늘 <b>3~5행만 먼저</b> 돌려 보고 전체를 돌리세요.</span></div>
+      <div class="pcard"><h4>고른 칸은 AI 서버로 갑니다</h4>
+        <p>실행하면 선택한 칸의 내용이 구글·오픈AI 서버로 전송됩니다.</p>
+        <span class="fix">→ 학생 <b>이름 열은 빼고</b> 필요한 내용만 보내세요.</span></div>
+    </div>
+
+    <h3>엑셀 용어 세 가지만</h3>
+    <div class="scrollx"><table class="t">
+      <tr><th style="width:110px">말</th><th>뜻</th></tr>
+      <tr><td>열 문자</td><td>엑셀 맨 위 회색 줄의 <b>A B C D …</b> 입니다.
+        '열 문자를 입력하세요' 라고 하면 <b>알파벳 한 글자만</b> 적습니다. (D열 ✕ / D ○)</td></tr>
+      <tr><td>범위</td><td><code>C2:C13</code> 은 'C열 2행부터 13행까지'라는 뜻입니다.
+        C2 칸을 누른 채 마우스를 C13까지 끌어 내리고 손을 떼면 됩니다.</td></tr>
+      <tr><td>창이 떠 있어도<br>시트를 누를 수 있습니다</td>
+        <td>'범위를 선택하세요' 창이 떠 있는 동안에도 뒤쪽 시트를 마우스로 긁을 수 있습니다.
+        창을 닫지 마세요. 이 연습창에서도 똑같이 해 보시면 됩니다.</td></tr>
+    </table></div>
+
+    <h3>실제로 하면 돈이 얼마나 드나요</h3>
+    <p style="font-size:13.5px">이 연습창은 <b>0원</b>입니다. 인터넷으로 나가지 않습니다.
+      실제 엑셀에서 여섯 미션을 그대로 해 보시면 글 생성은 다 합쳐 <b>300원 남짓</b>,
+      여기에 미션 5의 삽화 15장을 만들면 <b>1,400원</b>이 더해집니다.
+      쓴 돈은 <b>[안내 및 설정] → [사용 내역 내보내기]</b> 에서 언제든 확인하실 수 있습니다.</p>
+
+    <h3>실전에서 딱 한 번 확인할 것</h3>
+    <p style="font-size:13.5px">API 키 등록은 이미 끝났다는 전제입니다.
+      다만 미션 1을 실제로 하기 전에 <b>[안내 및 설정] → [Model/Temperature 설정(사용자)]</b> 을 한 번 열어
+      어떤 모델이 잡혀 있는지만 보고 오세요. 나머지 두 개
+      ([API 전체 설정(판매자)], [API 8자리 설정(기관 관리자)])는 선생님이 쓰실 메뉴가 아닙니다.</p>
+
+    <h3>메뉴는 여기 있습니다</h3>
+    <p style="font-size:13.5px">엑셀 위쪽 <b>[데이터]</b> 탭 → <b>[API 메뉴]</b> 그룹 →
+      <b>[DRM AI v10.0]</b> 단추. 새 탭이 아니라 원래 있던 데이터 탭 안에 들어 있습니다.</p>
+    <div id="ribbon0"></div>
+    <p style="font-size:13px;color:var(--ink2)">↑ 위 <b>DRM AI v10.0</b> 을 눌러 메뉴를 펼쳐 보세요.
+      4개 묶음(일반 기능 / GPT 실행 / Gemini 실행 / 안내 및 설정)이 실제와 똑같이 들어 있습니다.</p>
+
+    <div class="btnrow">
+      <button class="btn" onclick="finish(0);go(1)">메뉴를 봤습니다 · 미션 1 시작 →</button>
+    </div>
+    <p class="fineprint">
+      진행 상태는 이 컴퓨터의 이 브라우저에만 저장됩니다. 다른 PC나 시크릿 창에서는 처음부터 시작합니다.
+      이 주소를 즐겨찾기에 넣어 두시면 같은 브라우저에서 이어서 하실 수 있습니다.</p>
+  </div>
+</section>
+
+<!-- 미션 1~6 은 자바스크립트가 만들어 넣습니다 -->
+<div id="missions"></div>
+
+<!-- ══ 7. 수료 ══ -->
+<section class="pane" id="p7">
+  <div class="card">
+    <span class="pill g">마침</span>
+    <h2>40분 코스를 마쳤습니다</h2>
+    <p class="lead">이제 실제 업무에 바로 쓸 수 있습니다. 아래는 오늘 익힌 것을 한 장으로 정리한 표입니다.</p>
+    <div id="cert"></div>
+
+    <h3>오늘 익힌 것 한 장 정리</h3>
+    <div class="scrollx"><table class="t">
+      <tr><th style="width:150px">하고 싶은 일</th><th style="width:230px">메뉴</th><th>기억할 것</th></tr>
+      <tr><td>여러 행을 한꺼번에 AI에 보내기</td><td>[GPT/Gemini 실행] → …행 단위 병렬 처리</td><td>공통 프롬프트 1개 + 행별 추가 프롬프트 열 + 결과 열</td></tr>
+      <tr><td>대량 작업을 반값에</td><td>[GPT/Gemini 실행] → …절약 모드(Batch API)</td><td>결과는 <b>BatchResults 폴더의 새 파일</b>로 나옵니다</td></tr>
+      <tr><td>결과 받기</td><td>[GPT/Gemini 실행] → 배치 처리 상태 확인 / 결과 받기</td><td>[처리 중] → [완료] 로 바뀌면 폴더 열기</td></tr>
+      <tr><td>마크다운 기호 지우기</td><td>[일반 기능] → 마크다운 문법 기호, 빈 줄 정리</td><td>옵션 <code>1,2,4,6,11</code> 이 시험지·공문서용으로 무난</td></tr>
+      <tr><td>한 칸을 여러 칸으로</td><td>[일반 기능] → 셀 내용 행 단위 분할 기록기</td><td>기준은 쉼표로 구분. 콜론(:)으로 끝내면 라벨 방식</td></tr>
+      <tr><td>폴더 파일 목록</td><td>[일반 기능] → 폴더 내 파일 목록 가져오기</td><td>사람이 읽는 순서(자연 정렬)로 들어옵니다</td></tr>
+      <tr><td>파일 이름 한 번에</td><td>[일반 기능] → 파일 경로로 파일명 변경</td><td>확장자는 항상 원본 유지. 되돌리기 없음</td></tr>
+      <tr><td>개별 메일 발송</td><td>[일반 기능] → 메일 자동 발송</td><td>MailSender 시트 <b>3행부터</b>. 미리보기 없음</td></tr>
+      <tr><td>한글 파일 만들기</td><td>[일반 기능] → 한글 파일 만들기</td><td>분할 문구로 필요한 부분만. 한 열만 선택</td></tr>
+      <tr><td>삽화 만들기</td><td>[Gemini 실행] → …이미지 행 단위 병렬 생성</td><td>결과 열에는 경로만. 시트에 넣으려면 [경로 이미지를 열 단위로 삽입]</td></tr>
+      <tr><td>프롬프트 고르기</td><td>[일반 기능] → 프롬프트 관리</td><td>37개가 처음부터 들어 있습니다. 내 것도 저장 가능(최대 100개)</td></tr>
+      <tr><td>돈 얼마 썼나</td><td>[안내 및 설정] → 사용 내역 내보내기</td><td>모델별·기능별 실제 청구액</td></tr>
+      <tr><td>엑셀이 이상해졌을 때</td><td>[일반 기능] → Excel 상태 복원</td><td>화면 갱신·계산 모드를 정상으로 되돌립니다</td></tr>
+    </table></div>
+
+    <h3>내일 학교에서 바로 해 볼 것 3가지</h3>
+    <ol class="steps">
+      <li>담당 학급 생기부 문구를 <b>5명만</b> 행 단위 병렬 처리로 돌려 보기 (프롬프트 관리 → <code>평가문_학생부 종합의견</code>)</li>
+      <li>지난 시험지 PDF를 올인원 도우미로 문항 이미지로 자르고, <code>문제 제작_사회과정답과 풀이_오류 가능성표시</code> 로 점검해 보기</li>
+      <li>다음 지필평가 이원목적분류표를 엑셀에 적고 H열 수식으로 추가 프롬프트 만들어 보기</li>
+    </ol>
+
+    <div class="warn"><b>마지막 당부</b> — AI가 만든 문항, 생기부 문구, 채점 결과는 모두
+      <b>선생님이 확인한 뒤에</b> 씁니다. 이 도구는 초안을 아주 빠르게 만들어 주는 것이지
+      선생님의 판단을 대신하지 않습니다. 학생 개인정보가 든 자료를 다룰 때는 학교의 정보보호 지침을 먼저 확인하세요.</div>
+
+    <div class="btnrow"><button class="btn ghost" onclick="go(0)">처음 화면으로</button></div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<div class="mask" id="mask"><div id="dlgbox"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+/* ═══════════ 상태 ═══════════ */
+const KEY='drmai40.progress.v1';
+let done={}, cur=0, secs=40*60, tick=null;
+try{done=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){done={}}
+const NAVS=[['0','메뉴 찾기','3분 ★'],['1','행 단위 병렬 처리','12분 ★'],['2','정리하고 나누기','9분 ★'],
+  ['3','파일과 메일','14분'],['4','절약 모드','7분'],['5','시험 출제 풀코스','18분 ★'],
+  ['6','문항 점검','9분'],['✓','마침','']];
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}}
+function finish(i){done[i]=true;save();paint()}
+function resetAll(){
+  if(typeof cancelMenuWait==='function')cancelMenuWait();
+  if(typeof SHEETS!=='undefined')
+    Object.values(SHEETS).forEach(sh=>{try{sh.cancelPick()}catch(e){}});
+  if(typeof busy!=='undefined')busy=false;
+  if(typeof closeDlg==='function')closeDlg();
+  done={};save();secs=40*60;paused=false;
+  document.getElementById('clock').textContent='40:00';
+  const b=document.getElementById('pausebtn'); if(b)b.textContent='⏸ 멈춤';
+  if(typeof M!=='undefined')M.forEach(m=>{
+    try{
+      resetSheet(m);
+      const rb=document.getElementById('rb'+m.n);
+      m._step1=false;
+      if(rb&&m.gated)rb.querySelectorAll('[data-run]').forEach(x=>{
+        if(+x.dataset.run){x.disabled=true;x.title='앞 단계를 먼저 끝내세요'}});
+      const qh=document.getElementById('qz'+m.n);
+      if(qh){qh.outerHTML=quizHTML(m.n,m.quiz);
+        wireQuiz(m.n,m.quiz,()=>{finish(m.n);toast('미션 '+m.n+' 완료로 표시했습니다')});}
+    }catch(e){}
+  });
+  paint();go(0);toast('처음 상태로 되돌렸습니다')}
+let paused=false;
+function togglePause(){paused=!paused;
+  document.getElementById('pausebtn').textContent=paused?'▶ 다시':'⏸ 멈춤';
+  toast(paused?'시간을 멈췄습니다':'다시 셉니다')}
+function paint(){
+  const n=Object.keys(done).filter(k=>done[k]).length;
+  document.getElementById('pnum').textContent=n;
+  document.getElementById('pbar').style.width=(n/7*100)+'%';
+  document.querySelectorAll('#nav li').forEach((li,i)=>{
+    li.classList.toggle('done',!!done[i]);
+    li.querySelector('button').setAttribute('aria-current',cur===i?'true':'false');
+    li.querySelector('.n').textContent=done[i]?'✓':NAVS[i][0];
+  });
+}
+function go(i){
+  if(cur!==i&&typeof cancelMenuWait==='function')cancelMenuWait();
+  if(typeof SHEETS!=='undefined'&&cur!==i)
+    Object.values(SHEETS).forEach(sh=>{try{sh.cancelPick()}catch(e){}});
+  cur=i;
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  const el=document.getElementById('p'+i); if(el)el.classList.add('on');
+  paint(); window.scrollTo({top:0,behavior:'smooth'});
+  const mm=(typeof M!=='undefined')&&M.find(x=>x.n===i);
+  if(mm&&typeof mm.onShow==='function'){try{mm.onShow()}catch(e){}}
+  if(!tick&&i>0)startClock();
+}
+function startClock(){tick=setInterval(()=>{if(secs>0&&!paused)secs--;
+  const m=String(Math.floor(secs/60)).padStart(2,'0'),s=String(secs%60).padStart(2,'0');
+  document.getElementById('clock').textContent=m+':'+s;},1000)}
+function toggleTheme(){
+  const r=document.documentElement, c=r.getAttribute('data-theme');
+  if(c==='dark'){r.setAttribute('data-theme','light');toast('밝은 화면');}
+  else if(c==='light'){r.removeAttribute('data-theme');toast('시스템 설정을 따릅니다');}
+  else{r.setAttribute('data-theme','dark');toast('어두운 화면');}
+}
+let tmr=null;
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
+  clearTimeout(tmr);tmr=setTimeout(()=>e.classList.remove('on'),2600)}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+
+/* ═══════════ 리본 ═══════════ */
+const MENUS={
+ '일반 기능':['하이라이트 처리','마크다운 문법 기호, 빈 줄 정리','특정 문구있는 행 삭제','빈 행·열 삭제',
+   '병합 해제 후 자동 채우기','정렬 그룹으로 PDF/XLSX 저장','폴더 내 파일 목록 가져오기',
+   '파일 경로로 파일명 변경','경로 이미지를 열 단위로 삽입','선택 영역 또는 시트에서 이미지 삭제',
+   '그림책 제작','셀 내용 행 단위 분할 기록기','한글 파일 만들기','PDF 내 좌표를 이미지로 추출',
+   '메일 자동 발송','프롬프트 관리','템플릿 관리','—','Excel 상태 복원'],
+ 'GPT 실행':['GPT로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리',
+   'GPT로 글과 파일, 이미지 행 단위 처리 - 절약 모드(Batch API, 50% 할인)',
+   '배치 처리 상태 확인 / 결과 받기','GPT로 범위를 단일 셀에 처리','GPT로 자동 테이블 생성',
+   'GPT로 이미지 행 단위 병렬 생성(gpt-image-2)'],
+ 'Gemini 실행':['Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리',
+   'Gemini로 글과 파일, 이미지 행 단위 처리 - 절약 모드(Batch API, 50% 할인)',
+   '배치 처리 상태 확인 / 결과 받기','Gemini로 범위를 단일 셀에 처리','Gemini로 자동 테이블 생성',
+   'Gemini로 이미지 행 단위 병렬 생성(Nano Banana)','Gemini로 TTS 행 단위 병렬 생성',
+   'Gemini로 영상 맞춤 TTS제작'],
+ '안내 및 설정':['**필독**사용자 안내 사항','API 전체 설정(판매자)','API 8자리 설정(기관 관리자)',
+   'Model/Temperature 설정(사용자)','사용 내역 내보내기']
+};
+const MICON={'일반 기능':'🧰','GPT 실행':'🤖','Gemini 실행':'✨','안내 및 설정':'⚙️'};
+let ribSeq=0;
+function ribbonHTML(id,hot){
+  const H=Array.isArray(hot)?hot:(hot?[hot]:[]);
+  const h={has:t=>H.indexOf(t)>=0};
+  let sub='';
+  for(const g in MENUS){
+    let items=MENUS[g].map(t=>t==='—'?'<div class="sep"></div>':
+      `<div class="mi${h.has(t)?' hot':''}" data-cmd="${esc(t)}">${esc(t)}${h.has(t)?' ◀':''}</div>`).join('');
+    sub+=`<div class="mi" data-g="${esc(g)}">${MICON[g]} ${esc(g)}<span class="arw">▶</span>
+      <div class="submenu" data-sub="${esc(g)}">${items}</div></div>`;
+  }
+  return `<div class="xl" id="${id}">
+    <div class="xltabs"><span>파일</span><span>홈</span><span>삽입</span><span class="on">데이터</span>
+      <span>검토</span><span>보기</span></div>
+    <div class="ribbon">
+      <div class="rgroup">
+        <button class="rbtn${H.length?' pulse':''}" data-root="1"><span class="ico">🅰️</span>DRM AI v10.0</button>
+        <div class="lbl">API 메뉴</div>
+      </div>
+      <div style="font-size:12px;color:var(--ink2)">← [데이터] 탭 안 [API 메뉴] 그룹입니다</div>
+      <div class="menu">${sub}</div>
+    </div></div>`;
+}
+function wireRibbon(id,onCmd){
+  const root=document.getElementById(id); if(!root)return;
+  const menu=root.querySelector('.menu');
+  root.querySelector('[data-root]').onclick=e=>{e.stopPropagation();menu.classList.toggle('on')};
+  menu.querySelectorAll('[data-g]').forEach(el=>{
+    el.onclick=e=>{
+      if(e.target.closest('[data-cmd]'))return;
+      e.stopPropagation();
+      const s=el.querySelector('.submenu'), was=s.classList.contains('on');
+      menu.querySelectorAll('.submenu').forEach(x=>x.classList.remove('on'));
+      if(!was)s.classList.add('on');
+    };
+  });
+  menu.querySelectorAll('[data-cmd]').forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();menu.classList.remove('on');
+      menu.querySelectorAll('.submenu').forEach(x=>x.classList.remove('on'));
+      if(onCmd)onCmd(el.dataset.cmd);};
+  });
+  document.addEventListener('click',()=>{menu.classList.remove('on');
+    menu.querySelectorAll('.submenu').forEach(x=>x.classList.remove('on'))});
+}
+
+/* ═══════════ 시트 ═══════════ */
+function colN(c){let n=0;for(const ch of c)n=n*26+(ch.charCodeAt(0)-64);return n}
+function nCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=(n-r-1)/26}return s}
+function parseRef(r){
+  const p=r.split(':'), m=/^([A-Z]+)(\d+)$/.exec(p[0]); if(!m)return null;
+  const m2=p[1]?/^([A-Z]+)(\d+)$/.exec(p[1]):m;
+  return {c1:colN(m[1]),r1:+m[2],c2:colN(m2[1]),r2:+m2[2]};
+}
+class Sheet{
+  constructor(cfg){
+    this.pages = cfg.pages ? cfg.pages.map(p=>Object.assign({cols:['A'],w:{},n:10,
+      cells:{},cls:{},edit:[],note:''},p))
+      : [{name:cfg.name||'Sheet1',cols:cfg.cols||['A'],w:cfg.w||{},n:cfg.n||10,
+          cells:cfg.cells||{},cls:{},edit:[],hdr:cfg.hdr,note:''}];
+    this.active = cfg.active||0;
+    this.tabs = cfg.tabs || this.pages.map(p=>p.name);
+    this.status = cfg.status||'준비';
+    this.host=null; this.pick=null; this.hlWord=null;
+  }
+  get P(){return this.pages[this.active]||this.pages[0]}
+  get name(){return this.P.name}
+  get cols(){return this.P.cols}
+  get w(){return this.P.w}
+  get n(){return this.P.n}
+  get hdr(){return this.P.hdr}
+  get cells(){return this.P.cells}
+  get cls(){return this.P.cls||(this.P.cls={})}
+  set cls(v){this.P.cls=v||{}}
+  idxOf(name){return this.pages.findIndex(p=>p.name===name)}
+  at(name){return this.pages[this.idxOf(name)]}
+  show(name){const i=this.idxOf(name);
+    if(i>=0&&i!==this.active){this.active=i; this.selRef=''; this._newpage=true;
+      this._scroll=null; this.render();}
+    return this;}
+  /* 시트를 화면 안으로 올린다 — 연습창이 접혀 있으면 노란 칸을 볼 수가 없다 */
+  reveal(){
+    if(!this.host||this.destroyed)return;
+    const r=this.host.getBoundingClientRect();
+    const vh=window.innerHeight||document.documentElement.clientHeight||0;
+    if(!vh)return;
+    if(r.top<70||r.bottom>vh-10){
+      const y=window.scrollY+r.top-Math.max(64,(vh-r.height)/2);
+      try{window.scrollTo({top:Math.max(0,y),behavior:'smooth'})}
+      catch(e){window.scrollTo(0,Math.max(0,y))}
+    }
+  }
+  set(ref,v,page){const p=page?this.at(page):this.P; if(p)p.cells[ref]=v}
+  get(ref,page){const p=page?this.at(page):this.P; return p?p.cells[ref]:undefined}
+  mark(ref,cls,page){const p=page?this.at(page):this.P; if(p){p.cls=p.cls||{};p.cls[ref]=cls}}
+  mount(el){this.host=el;this.render()}
+  render(){
+    if(!this.host||this.destroyed)return;
+    const _g=this.host.querySelector('.grid');
+    if(this._newpage){this._newpage=false; this._scroll=null;}
+    else if(_g)this._scroll={t:_g.scrollTop,l:_g.scrollLeft};
+    const tabs=(this.tabs.length?this.tabs:[this.name]).map(t=>{
+      const live=this.idxOf(t)>=0;
+      return `<span class="${t===this.name?'on':''}${live?' live':''}"
+        data-tab="${esc(t)}"${live?'':' title="이 연습창에서는 이 시트 내용까지는 담지 않았습니다"'}
+        >${esc(t)}</span>`;}).join('');
+    let head='<tr><th style="width:34px"></th>'
+      +this.cols.map(c=>`<th style="width:${this.w[c]||90}px">${c}</th>`).join('')
+      +'<th class="pad" style="width:auto"></th></tr>';
+    let body='';
+    const mergeRow=[].concat(this.P.mergeRow||[]);
+    for(let r=1;r<=this.n;r++){
+      body+=`<tr><th>${r}</th>`;
+      if(mergeRow.indexOf(r)>=0){
+        const ref=this.cols[0]+r, v=this.cells[ref];
+        const cls=(this.cls&&this.cls[ref])||'';
+        body+=`<td class="${cls} merged" colspan="${this.cols.length+1}"
+          data-ref="${ref}"><div class="cw">${esc(String(v==null?'':v))}</div></td></tr>`;
+        continue;
+      }
+      for(const c of this.cols){
+        const ref=c+r, v=this.cells[ref], cls=(this.cls&&this.cls[ref])||'';
+        const canEdit=(this.P.edit||[]).indexOf(ref)>=0;
+        const isH=(r===1&&this.hdr!==false&&v!=null&&String(v)!=='');
+        const raw=String(v==null?'':v);
+        let inner=esc(raw);
+        if(this.hlWord){const k=esc(this.hlWord);
+          if(k&&inner.indexOf(k)>=0)inner=inner.split(k).join('<mark class="kw">'+k+'</mark>');}
+        body+=`<td class="${isH?'hdr':''} ${cls}${canEdit?' edit':''}" data-ref="${ref}"
+          title="${esc(canEdit?'여기를 눌러 직접 입력할 수 있습니다':raw.slice(0,400))}"
+          ><div class="cw">${inner}</div></td>`;
+      }
+      body+='<td class="pad"></td></tr>';
+    }
+    this.host.innerHTML=`<div class="xl">
+      <div class="xltabs">${tabs}</div>
+      <div class="gridbar${this.pick?' picking':''}${this._await?' awaiting':''}">
+        <span class="namebox" data-name>${this.selRef||''}</span>
+        <span data-msg>${esc(this.hint||'')}</span>
+        ${this.pick?'<span class="pk">여기서 끌어 선택하세요 — 아래쪽으로 끌면 표가 따라 내려갑니다</span>':''}
+        ${(this.pick||this._await)?'<button class="quit" data-quit>그만두기 (Esc)</button>':''}
+      </div>
+      ${this.P.note?`<div class="sheetnote">📌 ${esc(this.P.note)}</div>`:''}
+      <div class="grid"><table class="g${this.pick?' picking':''}"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+      <div class="statusbar"><span class="st" data-st>${esc(this.status||'준비')}</span><span>100%</span></div>
+    </div>`;
+    const g=this.host.querySelector('.grid');
+    if(g&&this._scroll){g.scrollTop=this._scroll.t;g.scrollLeft=this._scroll.l;}
+    this.markTruncated();
+    this.wireExpand();
+    this.wireTabs();
+    this.wireEdit();
+    const _q=this.host.querySelector('[data-quit]');
+    if(_q)_q.onclick=e=>{e.stopPropagation();this.cancelPick()};
+    if(this.pick)this.wirePick();
+  }
+  wireTabs(){
+    this.host.querySelectorAll('.xltabs span[data-tab]').forEach(el=>{
+      el.onclick=()=>{
+        const t=el.dataset.tab;
+        if(this.idxOf(t)<0){toast('이 연습창에서는 이 시트 내용까지는 담지 않았습니다');return}
+        if(this.pick){toast('먼저 범위 선택을 끝내 주세요');return}
+        if(this._await){toast('먼저 노란 칸을 채우고 Enter 를 누르세요. 그만두려면 Esc');return}
+        this.show(t);
+      };});
+  }
+  awaitEdit(page,ref,cb,hint){
+    if(this.destroyed){cb(null);return}
+    if(page)this.show(page);
+    const p=this.P;
+    p.edit=p.edit||[];
+    if(p.edit.indexOf(ref)<0)p.edit.push(ref);
+    this._await={ref:ref,cb:cb,page:this.name};
+    this.selRef=ref;                       // 엑셀처럼 이름 상자에 지금 칸을 보여 준다
+    p.cls=p.cls||{}; p.cls[ref]='await';
+    this.hint=hint||'노란 칸을 눌러 값을 적고 Enter 를 누르세요';
+    this.render();
+    this.reveal();
+    this.follow(ref,true);
+    armEsc(()=>this.cancelEdit());
+    /* 칸 안에 커서까지 놓아 준다 — 어디를 눌러야 하는지 헤매지 않게 */
+    setTimeout(()=>{
+      if(this.destroyed)return;
+      const aw=this._await; if(!aw||aw.ref!==ref)return;
+      const td=this.host&&this.host.querySelector('[data-ref="'+ref+'"]');
+      if(td&&!td.querySelector('input'))this.startEdit(td);
+    },300);
+  }
+  cancelEdit(){
+    const aw=this._await; if(!aw)return;
+    this._await=null; this.hint='';
+    const p=this.at(aw.page)||this.P;
+    if(p&&p.cls)delete p.cls[aw.ref];
+    this.render(); aw.cb(null);
+  }
+  wireEdit(){
+    const tb=this.host.querySelector('table.g'); if(!tb)return;
+    const aw=this._await;
+    tb.querySelectorAll('td.edit').forEach(td=>{
+      const locked=!!(aw&&aw.ref!==td.dataset.ref);
+      if(locked)td.classList.add('dim');
+      td.onclick=e=>{
+        if(this.pick)return;
+        e.stopPropagation();
+        if(locked){toast('지금 채울 곳은 깜빡이는 '+aw.ref+' 칸입니다');return}
+        this.startEdit(td);
+      };
+    });
+  }
+  startEdit(td){
+    const old=td.querySelector('input');
+    if(old){try{old.focus({preventScroll:true})}catch(e){old.focus()} old.select(); return}
+    const ref=td.dataset.ref, cur=String(this.cells[ref]==null?'':this.cells[ref]);
+    td.innerHTML='<input class="cellin" value="'+esc(cur)+'">';
+    const inp=td.querySelector('input');
+    try{inp.focus({preventScroll:true})}catch(e){inp.focus()}
+    inp.select();
+    this.selRef=ref;
+    const nb=this.host.querySelector('[data-name]'); if(nb)nb.textContent=ref;
+    let done=false;
+    const commit=ok=>{
+      if(done)return; done=true;
+      inp.onblur=null; inp.onkeydown=null;
+      const v=ok?inp.value:cur;
+      this.cells[ref]=v;
+      if(this.onEdit)try{this.onEdit(ref,v,this)}catch(e){}
+      const aw=this._await;
+      if(aw&&aw.ref===ref&&aw.page===this.name&&ok){
+        this._await=null; this.hint=''; escFn=null;
+        if(this.P.cls)delete this.P.cls[ref];
+        this.render(); aw.cb(v); return; }
+      this.render();
+    };
+    inp.onkeydown=e=>{
+      if(e.key==='Enter'){e.preventDefault();commit(true)}
+      else if(e.key==='Escape'){e.preventDefault();commit(false)}};
+    /* 딴 곳을 눌렀다고 곧바로 다음으로 넘어가지 않는다.
+       고친 것이 있으면 값만 담아 두고, 그대로면 아무 일도 일어나지 않는다. */
+    inp.onblur=()=>{
+      if(done)return;
+      const typed=inp.value;
+      if(typed===cur){commit(false);return}
+      done=true; inp.onblur=null; inp.onkeydown=null;
+      this.cells[ref]=typed;
+      if(this.onEdit)try{this.onEdit(ref,typed,this)}catch(e){}
+      this.render();
+      if(this._await&&this._await.ref===ref)
+        toast('적으신 내용은 남아 있습니다. 그 칸에서 Enter 를 눌러 주세요');
+    };
+  }
+  markTruncated(){
+    this.host.querySelectorAll('table.g td').forEach(td=>{
+      if(td.classList.contains('hdr')||td.classList.contains('edit'))return;
+      const cw=td.firstElementChild;
+      if(cw&&cw.scrollHeight>cw.clientHeight+2)td.classList.add('more');
+    });
+  }
+  wireExpand(){
+    const tb=this.host.querySelector('table.g'); if(!tb)return;
+    tb.addEventListener('click',e=>{
+      if(this.pick||this._await)return;
+      if(mask().classList.contains('on'))return;   // 다른 창이 떠 있을 때만 막는다
+      const td=e.target.closest('td.more'); if(!td)return;
+      const v=this.cells[td.dataset.ref];
+      if(v==null||String(v)==='')return;
+      msgbox({title:'셀 내용 전체 보기  —  '+td.dataset.ref,icon:'📄',
+        buttons:[['확인','ok',1]],text:String(v),
+        hint:'엑셀에서도 칸이 좁으면 이렇게 잘려 보입니다. 실제로는 칸 안에 내용이 다 들어 있습니다.'});
+    });
+  }
+  setStatus(t){this.status=t;const e=this.host&&this.host.querySelector('[data-st]');if(e)e.textContent=t}
+  follow(ref,alsoX){
+    if(!this.host||this.destroyed)return;
+    const g=this.host.querySelector('.grid'), td=this.host.querySelector('[data-ref="'+ref+'"]');
+    if(!g||!td)return;
+    const gr=g.getBoundingClientRect(), tr=td.getBoundingClientRect();
+    if(tr.bottom>gr.bottom-6)g.scrollTop+=(tr.bottom-gr.bottom)+24;
+    else if(tr.top<gr.top+26)g.scrollTop-=(gr.top+26-tr.top);
+    if(alsoX){
+      if(tr.right>gr.right-8)g.scrollLeft+=(tr.right-gr.right)+28;
+      else if(tr.left<gr.left+40)g.scrollLeft-=(gr.left+40-tr.left);
+    }
+    this._scroll={t:g.scrollTop,l:g.scrollLeft};
+  }
+  startPick(cb,hint){this.pick=cb;this.hint=hint||'셀을 드래그해서 고르세요';this.render()}
+  stopPick(){this.pick=null;this.hint='';this.render()}
+  cancelPick(){ if(this._stopEdge)this._stopEdge();
+    if(this.pick){const cb=this.pick;this.pick=null;this.hint='';cb(null);}
+    this.cancelEdit(); }
+  wirePick(){
+    const tb=this.host.querySelector('table.g'); if(!tb)return;
+    let a=null,down=false;
+    const nb=this.host.querySelector('[data-name]');
+    const doc=this.host.ownerDocument;
+    const paintSel=(x,y)=>{
+      tb.querySelectorAll('td.sel').forEach(t=>t.classList.remove('sel'));
+      const p={c1:Math.min(x.c,y.c),c2:Math.max(x.c,y.c),r1:Math.min(x.r,y.r),r2:Math.max(x.r,y.r)};
+      for(let r=p.r1;r<=p.r2;r++)for(let c=p.c1;c<=p.c2;c++){
+        const td=tb.querySelector(`[data-ref="${nCol(c)+r}"]`); if(td)td.classList.add('sel');}
+      const ref=nCol(p.c1)+p.r1+((p.c1===p.c2&&p.r1===p.r2)?'':':'+nCol(p.c2)+p.r2);
+      if(nb)nb.textContent=ref; this.selRef=ref; return ref;
+    };
+    const rc=td=>{const m=/^([A-Z]+)(\d+)$/.exec(td.dataset.ref);return {c:colN(m[1]),r:+m[2]}};
+    const cellAt=(x,y)=>{
+      const el=doc.elementFromPoint(x,y);
+      const hit=el&&el.closest?el.closest('td[data-ref]'):null;
+      if(hit)return hit;
+      // 창 밖으로 끌었을 때는 좌표로 가장 가까운 셀을 찾는다
+      let best=null,bd=Infinity;
+      tb.querySelectorAll('td[data-ref]').forEach(td=>{
+        const r=td.getBoundingClientRect();
+        const dx=x<r.left?r.left-x:(x>r.right?x-r.right:0);
+        const dy=y<r.top?r.top-y:(y>r.bottom?y-r.bottom:0);
+        const d=dx*dx+dy*dy;
+        if(d<bd){bd=d;best=td}});
+      return best;};
+    const g=this.host.querySelector('.grid');
+    let last={x:0,y:0}, edge=null;
+    const track=()=>{                       // 가장자리에서 표가 따라 흐르게 (엑셀과 같은 동작)
+      if(!down||!g)return;
+      const gr=g.getBoundingClientRect(); let moved=false;
+      if(last.y>gr.bottom-26){g.scrollTop+=16;moved=true}
+      else if(last.y<gr.top+36){g.scrollTop-=16;moved=true}
+      if(last.x>gr.right-26){g.scrollLeft+=16;moved=true}
+      else if(last.x<gr.left+40){g.scrollLeft-=16;moved=true}
+      if(moved){const td=cellAt(last.x,last.y); if(td&&a)paintSel(a,rc(td));}
+    };
+    const finish=()=>{ if(!down)return; down=false;
+      if(edge){clearInterval(edge);edge=null}
+      const cb=this.pick; if(!cb)return;
+      this._scroll=g?{t:g.scrollTop,l:g.scrollLeft}:this._scroll;
+      this.stopPick(); cb(this.selRef); };
+    tb.addEventListener('pointerdown',e=>{
+      const td=e.target.closest&&e.target.closest('td[data-ref]'); if(!td)return;
+      e.preventDefault(); down=true; a=rc(td); paintSel(a,a);
+      last={x:e.clientX,y:e.clientY};
+      if(edge)clearInterval(edge); edge=setInterval(track,60);
+      try{tb.setPointerCapture(e.pointerId)}catch(x){} });
+    tb.addEventListener('pointermove',e=>{ if(!down||!a)return;
+      last={x:e.clientX,y:e.clientY};
+      const td=cellAt(e.clientX,e.clientY); if(td)paintSel(a,rc(td)); });
+    tb.addEventListener('pointerup',e=>{
+      try{tb.releasePointerCapture(e.pointerId)}catch(x){} finish(); });
+    tb.addEventListener('pointercancel',()=>{down=false;if(edge){clearInterval(edge);edge=null}});
+    this._stopEdge=()=>{down=false;if(edge){clearInterval(edge);edge=null}};
+  }
+}
+</script>
+<script>
+/* ═══════════ VBA 대화상자 ═══════════ */
+let WIZBADGE='';                       // 마법사가 도는 동안 대화상자 위에 붙는 안내 배지
+const mask=()=>document.getElementById('mask');
+const dbox=()=>document.getElementById('dlgbox');
+let escFn=null;
+function armEsc(fn){escFn=fn}
+function closeDlg(){mask().classList.remove('on');dbox().innerHTML='';escFn=null}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&escFn){const f=escFn;closeDlg();f()}});
+
+function msgbox(o){ // {title,text,icon,buttons:[[label,val,isDef]],hint,err}
+  return new Promise(res=>{
+    const bts=(o.buttons||[['확인','ok',1]]).map((b,i)=>
+      `<button data-v="${esc(b[1])}" class="${b[2]?'def':''}">${esc(b[0])}</button>`).join('');
+    dbox().innerHTML=`<div class="dlg">
+      ${(o.step||WIZBADGE)?`<div class="wizstep"><span>${esc(o.step||WIZBADGE)}</span>
+        ${o.sq?`<span class="sq">${esc(o.sq)}</span>`:''}</div>`:''}
+      <div class="tt"><span>${esc(o.title||'')}</span><button class="x" data-close>✕</button></div>
+      <div class="bd"><span class="ic">${o.icon||'ℹ️'}</span>${esc(o.text||'')}</div>
+      ${o.err?`<div class="err">${esc(o.err)}</div>`:''}
+      ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
+      <div class="bt">${bts}</div>
+    </div>`;
+    mask().classList.add('on');
+    dbox().querySelectorAll('.bt button').forEach(b=>b.onclick=()=>{closeDlg();res(b.dataset.v)});
+    dbox().querySelector('[data-close]').onclick=()=>{closeDlg();res(null)};
+    armEsc(()=>res(null));
+  });
+}
+function inputbox(o){ // {title,text,def,hint,err,type}
+  return new Promise(res=>{
+    const field=o.big
+      ? `<textarea class="in inbig" id="dlgin">${esc(o.def||'')}</textarea>`
+      : `<input class="in" id="dlgin" value="${esc(o.def||'')}">`;
+    dbox().innerHTML=`<div class="dlg">
+      ${o.step?`<div class="wizstep"><span>${esc(o.step)}</span>
+        ${o.sq?`<span class="sq">${esc(o.sq)}</span>`:''}</div>`:''}
+      <div class="tt"><span>${esc(o.title||'')}</span><button class="x" data-close>✕</button></div>
+      <div class="bd">${esc(o.text||'')}${field}</div>
+      ${o.err?`<div class="err">${esc(o.err)}</div>`:''}
+      ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
+      <div class="bt"><button data-v="ok" class="def">확인</button><button data-v="">취소</button></div>
+    </div>`;
+    mask().classList.add('on');
+    const inp=document.getElementById('dlgin');
+    setTimeout(()=>{inp.focus();inp.select()},60);
+    inp.onkeydown=e=>{if(e.key==='Enter'&&!o.big){e.preventDefault();closeDlg();res(inp.value)}};
+    dbox().querySelectorAll('.bt button').forEach(b=>b.onclick=()=>{
+      const v=b.dataset.v==='ok'?inp.value:null; closeDlg(); res(v)});
+    dbox().querySelector('[data-close]').onclick=()=>{closeDlg();res(null)};
+    armEsc(()=>res(null));
+  });
+}
+/* 프롬프트 관리 폼 */
+const PLIST=['OCR_4지선택형문제집','OCR_원본 가져오기_수식','OCR_원본 가져오기_자필',
+ 'OCR_원본 가져오기_책','그림책만들기','독서활동 기록 전문가','맞춤법 검사2',
+ '문제 제작_5지 선다형_전과목','문제 제작_5지 선다형_추가프롬프트','문제 제작_문제로 이미지 만들기',
+ '문제 제작_사회과_논술형_추가프롬프트','문제 제작_사회과정답과 풀이',
+ '문제 제작_사회과정답과 풀이_오류 가능성표시','번역_영어','수행평가채점_2026_융합주제탐구',
+ '엑셀 전문가_보완','영상 맞춤 TTS 기본 프롬프트 예시','지필 평가 서답형 채점_2026-1-2_OCR및채점',
+ '지필 평가 서답형 채점_2026-1-2_OCR및파일기반채점','지필 평가_2026과학의날_채점',
+ '테이블 작성_2차 출제 요청 프롬프트','테이블 작성_데이터 없이 블루킷 문제 만들기',
+ '테이블 작성_데이터기반 블루킷문제만들기','테이블 작성_영단어 문제 테이블로 만들기_출처_오빠두엑셀',
+ '테이블 작성_자동 테이블 생성 예시_대통령선거','테이블 작성_표 형식 자료 이용',
+ '테이블 작성_품의서와영수증기반','페이지분석_컴퓨터구조_기말_OCR',
+ '평가문_1학년_독서소개영상_PDF와영상','평가문_2026주제선택','평가문_학생 답안을 피드백하기',
+ '평가문_학생부 종합의견','하이라이트_검증키워드만들기','학생부 과세특 검토',
+ '학생부 독서 활동 점검','학생부 종합 검토','학생부 파일 단위 검사'];
+const PBODY={
+ '문제 제작_5지 선다형_추가프롬프트':`# Role Definition
+당신은 대한민국 2022 개정 교육과정에 정통한 **[중학교 사회과 수석 출제위원]**입니다.
+사용자가 제공하는 **[추가 프롬프트(출제 요청사항 및 입력 데이터)]**를 완벽히 분석하여, 중학생(특히 2학년)의 어휘 수준과 인지 발달 단계에 맞춘 실제 내신 시험용 완성도 높은 **5지 선다형 문항 1개**를 제작하십시오.
+
+# [출제 지침 (Guidelines)]
+1. 발문(질문) 작성 규칙 : 사용자가 요청한 [발문 유형]에 맞추어 정제된 문장을 작성하십시오.
+2. 배점 표기 규칙 : 점수를 지정한 경우 발문 맨 끝에 소괄호로 기재하십시오.
+3. 자료 가공 및 변형 : 입력 데이터를 단순 복사하지 말고 [문제 유형]에 맞게 재가공하십시오.
+   시각 자료가 필요하면 [그림 생성 프롬프트]를 한글로 상세히 작성해 상단에 제시하십시오.
+5. 선택지 및 난이도 설계 : [난이도]와 [정답 번호]를 반드시 엄수하고,
+   일반 5지 선다형은 선택지를 글자 수 오름차순으로 정렬하십시오.
+
+# [출력 형식 (Output Format)]
+## [그림 생성 프롬프트] (※ 필요한 경우만, 불필요 시 '없음')
+## [문항 구성]
+**질문:**  /  **[자료]:**  /  **선택지:**  /  **정답:**  /  **설명:**`,
+ '문제 제작_문제로 이미지 만들기':`아래 두 가지 상황에 맞게 시험 출제용 흑백 라인 아트 스타일로 이미지를 만들어줘.
+#1. 자료에 '## [그림 생성 프롬프트]'에 내용이 있는 경우, 이것을 반영해서 만들어줘.
+#2. 자료에 '## [그림 생성 프롬프트]'에 내용이 없는 경우, 문제 작성에 필요하다고 생각되는 자료만 선별해서 이미지를 만들어줘.`,
+ '문제 제작_사회과정답과 풀이_오류 가능성표시':`# 너는 정치, 경제, 사회문화, 법 과목을 담당한 수학능력시험 출제 위원 입장이 되어서 해당 자료의 문제를 검토하고 정답과 풀이, 오류 가능성을 간단 명료하게 작성해줘. 오류 가능성은 맞춤법, 중복 답안, 답 없음 등을 중심으로 매우 철저하게 검토해서 작성해줘. 또한, 오류 가능성이 있는 경우 **오류 가능성 있음**을 없으면 **오류 가능성 없음**을 [## 오류 가능성] 맨 처음 줄에 표시해줘.
+
+# 출력 형식
+
+## 정답
+
+## 풀이
+
+## 오류 가능성`,
+ '평가문_학생부 종합의견':`중학교 교사로서 학생의 자료를 바탕으로 [평가문 예시] 스타일을 참고해서 평가문을 새로 작성하고, 학생별 평가 범위 자료가 부족한 경우 분량 지침을 따르세요.
+
+# 세부 지침
+2. 평가문 분량 및 형식 : 500글자 이하 → 50자 / 1000글자 이하 → 200자 / 초과 → 300자 이내.
+   모든 문장은 '~함', '~임' 등 개조식으로.
+3. 개인정보 비포함 : 이름, 기관명, 단체명, 영어 표기를 넣지 마세요.
+4. 학생을 주어로 표현하지 마세요.`
+};
+function promptform(o){ // {correct}
+  return new Promise(res=>{
+    const opts=PLIST.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+    dbox().innerHTML=`<div class="dlg pform">
+      <div class="tt"><span>프롬프트 관리 (${PLIST.length}/100)</span><span>✕</span></div>
+      <div class="row" style="padding-top:12px"><div class="col">
+        <label>기존 리스트에서 선택</label>
+        <select id="pfsel" size="1">${opts}</select>
+        <label>Prompt 명칭 입력</label>
+        <input class="in" id="pfname" style="margin-top:0" value="">
+        <textarea id="pfbody" readonly></textarea>
+      </div>
+      <div class="pfbtns">
+        <div style="height:22px"></div>
+        <button class="pfmain" data-a="use">Prompt 사용하기</button>
+        <button data-a="x">재사용을 위해 Prompt 저장</button>
+        <button data-a="x">리스트에서 Prompt 삭제</button>
+        <button data-a="x">파일로 내보내기</button>
+        <button data-a="x">파일로 가져오기</button>
+      </div></div>
+      ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
+    </div>`;
+    mask().classList.add('on');
+    const sel=document.getElementById('pfsel'),nm=document.getElementById('pfname'),
+          bd=document.getElementById('pfbody');
+    const sync=()=>{nm.value=sel.value;
+      bd.value=PBODY[sel.value]||'( 이 프롬프트의 본문은 이 연습창에 담지 않았습니다.\n  실제 추가기능에서는 전체 내용이 보입니다. )';};
+    const startAt=o.decoy||o.correct;
+    if(startAt){const i=PLIST.indexOf(startAt); if(i>=0)sel.selectedIndex=i;}
+    sync(); sel.onchange=sync;
+    dbox().querySelectorAll('.pfbtns button').forEach(b=>b.onclick=()=>{
+      if(b.dataset.a==='use'){closeDlg();res(sel.value)}
+      else toast('연습창에서는 이 단추까지는 흉내 내지 않았습니다');
+    });
+  });
+}
+
+/* ═══════════ 리본 메뉴를 실제로 누르게 하는 장치 ═══════════ */
+let MENUWAIT=null;                     // {n, cmd, cb}
+function ribbonItems(n){
+  const root=document.getElementById('rib'+n);
+  return root?Array.prototype.slice.call(root.querySelectorAll('.mi[data-cmd]')):[];
+}
+function setRibbonHot(n,cmds){
+  const list=Array.isArray(cmds)?cmds:(cmds?[cmds]:[]);
+  ribbonItems(n).forEach(el=>{
+    const on=list.indexOf(el.dataset.cmd)>=0;
+    el.classList.toggle('hot',on);
+    el.textContent=el.dataset.cmd+(on?' ◀':'');
+  });
+  const root=document.getElementById('rib'+n);
+  const r=root&&root.querySelector('.rbtn');
+  if(r)r.classList.toggle('pulse',list.length>0);
+}
+function cancelMenuWait(){
+  if(!MENUWAIT)return;
+  const cb=MENUWAIT.cb; MENUWAIT=null; cb(null);
+}
+function waitMenu(m,cmd,bar){
+  return new Promise(res=>{
+    setRibbonHot(m.n,[cmd]);
+    armEsc(()=>cancelMenuWait());
+    const sh=SHEETS[m.n];
+    if(sh&&!sh.destroyed){sh.hint=bar||('리본에서 [ '+cmd+' ] 를 눌러 주세요');sh.render()}
+    const rib=document.getElementById('rib'+m.n);
+    if(rib){
+      const r=rib.getBoundingClientRect(), vh=window.innerHeight||0;
+      if(vh&&(r.top<70||r.top>vh-170)){
+        const y=Math.max(0,window.scrollY+r.top-90);
+        try{window.scrollTo({top:y,behavior:'smooth'})}catch(e){window.scrollTo(0,y)}
+      }
+    }
+    toast('리본의 [DRM AI v10.0] → [일반 기능] → [ '+cmd+' ] 를 눌러 주세요');
+    MENUWAIT={n:m.n,cmd:cmd,cb:v=>{
+      escFn=null;
+      setRibbonHot(m.n,Object.keys(m.cmds||{[m.cmd]:0}));
+      const s2=SHEETS[m.n]; if(s2&&!s2.destroyed){s2.hint='';s2.render()}
+      res(v);}};
+  });
+}
+
+/* ═══════════ 마법사 ═══════════ */
+async function runWizard(steps,ctx){
+  /* 안내창이 뜨는 단계만 세어 '3 / 12' 처럼 알려 준다 */
+  const IX=[]; steps.forEach((x,k)=>{
+    if(x&&typeof x!=='function'&&x.type!=='act')IX.push(k)});
+  const TOT=IX.length;
+  for(let i=0;i<steps.length;i++){
+    const s=typeof steps[i]==='function'?steps[i](ctx):steps[i];
+    if(!s)continue;
+    if(s.type==='act'){
+      WIZBADGE=(ctx.runLabel?ctx.runLabel+' · ':'')+'자동 실행 중';
+      await s.run(ctx); continue; }
+    const pos=IX.indexOf(i)+1;
+    const STEP=(TOT>=4&&pos>0)
+      ?((ctx.runLabel?ctx.runLabel+' · ':'')+pos+' / '+TOT+' 단계'):'';
+    WIZBADGE=STEP;
+    let err='', last=null;
+    for(;;){
+      let v, g;
+      const TXT0=(typeof s.text==='function')?s.text(ctx):s.text;
+      /* 두 번째부터는 짧은 문구가 있으면 그것을 쓴다 (같은 긴 글을 또 읽히지 않게) */
+      const TXT=(err&&s.retry)?((typeof s.retry==='function')?s.retry(ctx):s.retry):TXT0;
+      const HNT=(typeof s.hint==='function')?s.hint(ctx):s.hint;
+      if(s.type==='msg'){
+        v=await msgbox({title:s.title,text:TXT,icon:s.icon,buttons:s.buttons,hint:HNT,err,step:STEP,sq:s.sq});
+      }else if(s.type==='input'){
+        v=await inputbox({title:s.title,text:TXT,
+          def:(err&&last!==null)?last:(s.def||''),hint:HNT,err,step:STEP,
+          big:(s.big||String(s.def||'').length>60)});
+      }else if(s.type==='pick'){
+        g=await msgbox({title:s.title,text:TXT,icon:'🖱️',buttons:[['확인',1,1]],err,step:STEP,
+          hint:(err?'다시 골라 주세요. ':'')+ (HNT||'')});
+        if(g===null){toast('취소했습니다');return 'CANCEL'}
+        if(ctx.sheet.destroyed)return 'CANCEL';
+        v=await new Promise(r=>{ctx.sheet.startPick(r,s.title+' — '+(s.want||''))});
+      }else if(s.type==='tab'){
+        ctx.sheet.show(s.page);
+        ctx.sheet.hint=s.bar||('[ '+s.page+' ] 시트로 넘어왔습니다');
+        ctx.sheet.render(); ctx.sheet.reveal();
+        g=await msgbox({title:s.title,text:TXT,icon:'🗂️',buttons:[['확인','ok',1]],err,step:STEP,hint:HNT});
+        if(g===null){toast('취소했습니다');return 'CANCEL'}
+        ctx.sheet.reveal(); v=ctx.sheet.name;
+      }else if(s.type==='edit'){
+        g=await msgbox({title:s.title,text:TXT,icon:'✎',buttons:[['확인','ok',1]],err,step:STEP,
+          hint:(err?'다시 적어 주세요. ':'')+(HNT||'')});
+        if(g===null){toast('취소했습니다');return 'CANCEL'}
+        if(ctx.sheet.destroyed)return 'CANCEL';
+        v=await new Promise(r=>{ctx.sheet.awaitEdit(s.page,s.ref,r,s.bar)});
+      }else if(s.type==='menu'){
+        g=await msgbox({title:s.title,text:TXT,icon:'🖱️',buttons:[['확인','ok',1]],err,step:STEP,
+          hint:(err?'다시 눌러 주세요. ':'')+(HNT||'')});
+        if(g===null){toast('취소했습니다');return 'CANCEL'}
+        v=await waitMenu(ctx.m,s.cmd,s.bar);
+      }else if(s.type==='form'){
+        v=await promptform({correct:s.pre,decoy:s.decoy,hint:HNT});
+      }
+      if(v===null||v===''&&s.type!=='input'){ if(s.optional){return 'CANCEL'} }
+      if(v===null){ toast('취소했습니다. 실제 기능도 여기서 끝납니다'); return 'CANCEL'; }
+      if(v==='c'&&s.type==='msg'&&(s.buttons||[]).some(b=>b[1]==='c')){
+        toast('[취소] 를 골랐습니다. 실제 기능도 여기서 종료됩니다'); return 'CANCEL'; }
+      if(s.type==='input'||s.type==='edit')last=v;
+      const bad=s.check?s.check(v,ctx):null;
+      if(!bad){ if(s.store)ctx[s.store]=v; if(s.after)await s.after(v,ctx); break; }
+      err=bad;
+    }
+  }
+  return 'OK';
+}
+/* 실행 애니메이션 */
+function runRows(sheet,list,statusText,doneText){
+  return new Promise(res=>{
+    let i=0;
+    sheet.setStatus(statusText);
+    const t=setInterval(()=>{
+      if(sheet.destroyed){clearInterval(t);res();return}
+      if(i>=list.length){clearInterval(t);sheet.setStatus(doneText||'처리 완료');
+        if(list.length)sheet.follow(list[list.length-1][0],true);
+        res();return}
+      const [ref,val]=list[i];
+      sheet.set(ref,val); sheet.cls=sheet.cls||{}; sheet.cls[ref]='filled';
+      sheet.render(); sheet.follow(ref); i++;
+    },170);
+  });
+}
+
+/* ═══════════ 퀴즈 ═══════════ */
+function quizHTML(id,qs){
+  return `<div class="quiz" id="qz${id}">`+qs.map((q,i)=>
+    `<div class="q" data-i="${i}"><p>Q${i+1}. ${esc(q.q)}</p>`+
+    q.a.map((a,j)=>`<button class="opt" data-j="${j}">${esc(a)}</button>`).join('')+
+    `<div class="qfb"></div></div>`).join('')+
+    `<div style="font-size:13px;color:var(--ink2)" data-score></div></div>`;
+}
+function wireQuiz(id,qs,onAll){
+  const root=document.getElementById('qz'+id); if(!root)return;
+  let ok=0;
+  root.querySelectorAll('.q').forEach(qe=>{
+    const i=+qe.dataset.i, q=qs[i], fb=qe.querySelector('.qfb');
+    qe.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      if(qe.dataset.locked)return;
+      const j=+b.dataset.j, right=j===q.c;
+      if(right){qe.dataset.locked='1';
+        qe.querySelectorAll('.opt.no').forEach(x=>x.classList.remove('no'));
+        b.classList.add('ok');ok++;
+        fb.className='qfb on ok';fb.textContent='맞습니다. '+q.why;}
+      else{b.classList.add('no');fb.className='qfb on no';
+        fb.textContent='다시 생각해 보세요. '+(q.hint||'');}
+      const sc=root.querySelector('[data-score]');
+      sc.textContent=`맞힌 문제 ${ok} / ${qs.length}`;
+      if(ok===qs.length){sc.textContent+='  ·  다 맞히셨습니다.';onAll&&onAll()}
+    });
+  });
+}
+</script>
+<script>
+const M=[];
+const STU=['김도윤','박서연','이하준','최지우','정민서','강예준','윤채원','임시우','한소율','오건우','신다인','배준혁'];
+
+/* ══════════ 미션 1 ══════════ */
+const OBS=['모둠활동에서 발표 맡음. 자료조사 혼자 다 함. 목소리 작아서 뒤에서 안들림. 질문받으면 잘 대답.',
+'지각 3회. 근데 수학 어려운문제 끝까지 붙잡고 품. 친구들이 물어보면 풀이과정 그려가며 설명해줌.',
+'체육대회 응원단장. 반티 디자인 도맡음. 수업시간엔 조는 일 잦음. 미술 수행평가 최우수.',
+'도서부. 점심시간마다 도서실 정리. 국어 독서기록장 20권 이상. 발표는 극도로 꺼림.',
+'청소당번 아닌날도 남아서 도와줌. 과학실험때 안전수칙 먼저 챙김. 시험기간 성적 하락 걱정 많이함.',
+'축구부. 대회 준비로 결석 잦음. 빠진 진도 친구노트 빌려 스스로 보충. 사회 토론수업 적극적.',
+'영어 회화 유창. 원어민 수업때 통역 도움. 조용한 편이라 모둠에서 의견 잘 안냄. 일기 꾸준히 씀.',
+'컴퓨터 잘 다룸. 학급 홈페이지 만들어줌. 친구와 다툼 1회 있었으나 스스로 사과함. 수학 하위권.',
+'학급회장. 학급회의 진행 매끄러움. 갈등상황에서 양쪽 말 다 들어줌. 본인 발표는 준비 부족한 편.',
+'말수 적음. 급식실에서 잔반 정리 도와줌. 기술가정 목공수행 뛰어남. 국어 글쓰기 어려워함.',
+'합창부. 음악시간 반주 담당. 지필평가 성적 우수. 모둠활동에서 혼자 다 하려는 경향.',
+'체험학습 안전요원 자원. 무거운짐 먼저 듦. 숙제 미제출 5회. 상담시 스스로 개선계획 세움.'];
+const ADD=['발표력이 성장한 점을 앞세워 써 줘.','성실성보다 끈기와 또래 가르치기를 중심으로 써 줘.',
+'리더십과 예술적 감각을 함께 담아 줘.','독서 습관을 중심으로 쓰고, 발표 부담은 완곡하게 표현해 줘.',
+'배려 행동을 구체적 장면으로 써 줘.','자기주도적 학습 태도를 앞세워 써 줘.',
+'언어 능력을 중심으로, 참여 확대 가능성을 덧붙여 줘.','재능 기부와 관계 회복 과정을 담아 줘.',
+'갈등 조정 능력을 중심으로 써 줘.','묵묵한 실천을 중심으로 써 줘.',
+'음악적 재능과 협업 성장 가능성을 함께 써 줘.','책임감 있는 태도와 자기 점검 노력을 담아 줘.'];
+const RES1=[
+'행동특성: 모둠 활동에서 발표를 맡아 자료 조사를 스스로 수행함. 목소리가 작아 전달이 어려웠으나 질문에 정확히 답하며 점차 자신감을 보임.',
+'행동특성: 어려운 문제를 끝까지 붙잡고 해결하려는 끈기가 있음. 친구가 물으면 풀이 과정을 직접 그려 가며 설명해 주는 모습이 자주 관찰됨.',
+'행동특성: 체육대회 응원단장을 맡아 학급을 이끌고 반 티셔츠 도안을 직접 제작함. 미술 수행평가에서 뛰어난 표현력을 보임.',
+'행동특성: 점심시간마다 도서실을 정리하며 도서부 활동을 성실히 수행함. 독서 기록장을 20권 이상 작성할 만큼 읽기 습관이 자리 잡음.',
+'행동특성: 청소 당번이 아닌 날에도 남아 정리를 도움. 과학 실험에서 안전 수칙을 먼저 확인하고 모둠원에게 알려 주는 모습을 보임.',
+'행동특성: 대회 준비로 빠진 진도를 친구의 필기를 빌려 스스로 보충함. 사회 토론 수업에서 근거를 들어 의견을 제시함.',
+'행동특성: 영어 회화 능력이 뛰어나 원어민 수업에서 친구들의 이해를 도움. 일기를 꾸준히 작성하며, 모둠에서 의견을 내는 경험이 더해지면 성장이 기대됨.',
+'행동특성: 컴퓨터 활용 능력을 살려 학급 홈페이지를 제작해 학급에 기여함. 친구와의 갈등 상황에서 스스로 먼저 사과하며 관계를 회복함.',
+'행동특성: 학급회장으로서 회의를 원활히 진행하고, 갈등 상황에서 양쪽 의견을 모두 들은 뒤 조정하는 태도를 보임.',
+'행동특성: 급식실 잔반 정리를 자원해 묵묵히 수행함. 기술·가정 목공 수행에서 정교한 완성도를 보임.',
+'행동특성: 음악 시간 반주를 맡아 합창 수업을 이끎. 지필평가 성적이 우수하며, 모둠에서 역할을 나누는 경험이 더해지면 협업 역량이 커질 것으로 보임.',
+'행동특성: 체험학습 안전요원을 자원하고 무거운 짐을 먼저 드는 등 책임감 있는 태도를 보임. 상담에서 스스로 개선 계획을 세워 실천하려 노력함.'];
+const P1=`너는 중학교 담임교사다. 아래 [관찰 기록]을 학교생활기록부
+'행동특성 및 종합의견' 문장으로 다듬어라.
+
+# 지켜야 할 것
+- 한 문장 60자 내외, 전체 2~3문장.
+- 근거 없는 칭찬을 지어내지 않는다. 기록에 있는 사실만 쓴다.
+- 학생 이름을 쓰지 않는다. '~함', '~임' 체로 끝낸다.
+- 성격 단정이 아니라 관찰된 행동으로 쓴다.
+
+# 출력 형식
+행동특성: (다듬은 문장)`;
+
+function sheet1(){
+  const c={A1:'번호',B1:'학생',C1:'관찰 기록 (급히 적어 둔 메모)',D1:'추가 프롬프트 (이 행에만)',
+    E1:'결과 — 비워 두세요',G1:'▼ 공통 프롬프트',G2:P1};
+  STU.forEach((s,i)=>{c['A'+(i+2)]=i+1;c['B'+(i+2)]=s;c['C'+(i+2)]=OBS[i];c['D'+(i+2)]=ADD[i]});
+  return new Sheet({name:'1_생기부 문구 다듬기',tabs:['① 시작 안내','1_생기부 문구 다듬기'],
+    cols:['A','B','C','D','E','F','G'],w:{A:40,B:56,C:200,D:162,E:210,F:10,G:232},n:13,cells:c});
+}
+M.push({n:1,title:'행 단위 병렬 처리 — 12명 생기부 문구를 한 번에',mins:'12분  ★ 핵심',
+ lead:'엑셀 한 행 = AI에게 보내는 질문 하나. 12행이면 질문 12개를 동시에 보내고 답을 옆 칸에 나란히 받습니다.',
+ why:`<p>학생 한 명씩 챗봇 창에 붙여넣고 답을 복사해 오는 일을 12번 반복하면 40분이 걸립니다.
+   이 기능은 <b>2분</b>에 끝냅니다. 그리고 학생마다 다른 부탁(D열)을 함께 붙일 수 있습니다.</p>
+   <p><b>세 가지만 이해하면 됩니다.</b></p>
+   <div class="scrollx"><table class="t"><tr><th style="width:130px">이름</th><th style="width:110px">어디에 넣나</th><th>무엇인가</th></tr>
+   <tr><td>공통 프롬프트</td><td>G2 칸 하나</td><td>모든 행에 똑같이 적용되는 지시. "어떻게 쓸 것인가"의 규칙</td></tr>
+   <tr><td>데이터 범위</td><td>C2:C13</td><td>행마다 다른 재료. 글이든 파일 경로든 됩니다</td></tr>
+   <tr><td>추가 프롬프트 열</td><td>D</td><td>그 행에만 붙는 한 줄. 안 쓰면 비워 두면 됩니다</td></tr></table></div>`,
+ cards:[
+  {h:'결과 열을 원본 열로 지정',p:'C를 결과 열로 적으면 관찰 메모가 지워집니다. 되돌리기가 안 됩니다.',fix:'결과 열은 늘 빈 열(E)로'},
+  {h:'동시 실행 수를 무작정 크게',p:'한도를 넘으면 Rate Limit 오류가 나서 실패 행만 늘어납니다.',fix:'오류가 나면 값을 절반으로'},
+  {h:'멈춘 줄 알고 엑셀을 클릭',p:'진행률 퍼센트가 없어 멈춘 것처럼 보입니다. 건드리면 꼬입니다.',fix:'완료 창이 뜰 때까지 기다리기'}],
+ cmd:'Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리',
+ cmds:{'Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리':0,'GPT로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리':0},
+ steps:['[Gemini 실행] → [Gemini로 글과 파일… 행 단위 병렬 처리]','동시 실행 수 → 10 (기본값)',
+  'URL 확장 모드 → [아니오]','설정 확인 → [확인]','프롬프트 가져오기 → [예] (셀 범위)',
+  '프롬프트 범위 → G2 한 칸','데이터 범위 → C2:C13','추가 프롬프트 열 → D','결과 저장 열 → E'],
+ wiz:ctx=>[
+  {type:'input',title:'동시 실행 수 설정',def:'10',
+   text:`동시에 몇 개 행을 처리할까요?\n\n[gemini-3.7-flash - API 키 등급별 추천]\n  무료 키(결제 미연결)   8\n  Tier 1(결제 연결)   20\n  Tier 2/3(누적 $100/$1,000+)   30\n  220행 예상: 8=23분 / 20=9분 / 30=6분\n\n[gemini-3.1-pro-preview (추론 모델)]\n  결제 연결 키 전용 · 3~5개 권장\n  (무료 키는 이 모델 사용 불가)\n\n※ 한도 기준은 Google 정책 변동 시 달라질 수 있음\nRate Limit 오류가 나면 값을 절반으로 낮추세요.\n\n입력 범위: 1~30`,
+   hint:'결제를 연결하지 않은 키라면 8, 잘 모르겠으면 8 을 적으세요.', store:'workers',
+   check:v=>{const n=+v;return (n>=1&&n<=30)?null:'1~30 사이 숫자를 넣으세요. (기본값 10)'}},
+  {type:'msg',title:'URL 확장 모드',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'셀 텍스트에 포함된 URL의 실제 콘텐츠를\n가져와 분석에 포함할까요?\n\n[예]  Gemini url_context 도구로 URL 접근\n  웹 페이지 / 이미지 / PDF 자동 분석\n  YouTube 공개 영상은 내용 직접 분석(최대 3시간)\n  요청당 최대 20개 URL 지원\n\n[아니오]  URL을 텍스트 문자열로만 취급',
+   hint:'이번 자료에는 인터넷 주소가 없습니다. [아니오]를 고르세요.',
+   check:v=>v==='n'?null:'이 실습 데이터에는 URL이 없습니다. [아니오]로 진행합니다.'},
+  {type:'msg',title:'병렬 처리 설정 확인',icon:'ℹ️',buttons:[['확인','ok',1]],
+   text:c=>'[설정 요약]\n모델: gemini-3.7-flash (Temperature 미사용)\n행별 개별 처리(배치 1 고정) · 동시 실행: '+(c.workers||10)+'개\n  기본 모드 - 고속 모델(3.7-flash) 일반 작업\nThinking Level: high (thinkingConfig 적용)\n\n[URL 확장 모드]\n  [미사용] - URL은 텍스트 문자열로만 처리\n\n[파일 크기 제한 (행당 총 용량)]\n  Gemini 3.x - 행당 최대 100MB\n  종류·개수 무관, 초과 시 일부 파일 자동 건너뜀',
+   hint:'모델과 설정을 확인하는 창입니다. 읽고 [확인].'},
+  {type:'msg',title:'프롬프트 가져오기 방식 선택',icon:'❓',
+   buttons:[['예','y',1],['아니오','n'],['취소','c']],
+   text:'프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 직접 \'셀 범위 선택\'으로 진행\n[아니오] \'프롬프트 관리 폼\'에서 선택\n[취소] 작업 중단',
+   hint:'이번엔 시트의 G2 칸을 쓸 것이므로 [예].',
+   check:v=>v==='y'?null:(v==='n'?'이번 실습은 시트의 G2 칸을 쓰는 연습입니다. [예]를 고르세요. (프롬프트 관리 폼은 미션 5에서 씁니다)':'취소하면 아무 일도 일어나지 않습니다. [예]로 진행해 보세요.')},
+  {type:'pick',title:'프롬프트 범위 선택',want:'G2 한 칸',
+   text:'프롬프트 내용이 들어있는 셀 범위를 선택하세요:',
+   hint:'오른쪽 초록 칸 G2 를 한 번 클릭하세요.',
+   check:v=>v==='G2'?null:'공통 프롬프트는 G2 칸에 있습니다. G2 를 고르세요.'},
+  {type:'pick',title:'데이터 범위 선택',want:'C2:C13',
+   text:'파일 경로 또는 텍스트가 들어 있는\n셀 범위를 선택하세요.\n(PDF / 이미지 / 음성 / 텍스트 파일 지원)',
+   hint:'C2 에서 마우스를 누른 채 C13 까지 끌어 내리세요.',
+   check:v=>v==='C2:C13'?null:'관찰 기록은 C열 2행부터 13행까지입니다. C2:C13 을 드래그하세요. (지금 고른 것: '+v+')'},
+  {type:'input',title:'추가 프롬프트 열',def:'',
+   text:'추가로 사용할 \'행별 프롬프트\' 열 문자를\n입력하세요. (예: B)\n사용하지 않으면 빈 칸으로 두고 [확인]',
+   hint:'학생마다 다른 부탁이 D열에 있습니다. D 를 입력하세요.',
+   check:v=>v.trim().toUpperCase()==='D'?null:'행별 부탁은 D열에 있습니다. D 를 입력하세요.'},
+  {type:'input',title:'결과 저장 열',def:'',
+   text:'결과를 기록할 열의 문자를 입력하세요 (예: K):',
+   hint:'비어 있는 E열에 받습니다.',
+   check:v=>{const u=v.trim().toUpperCase();
+     if(u==='C'||u==='D')return '그 열에는 원본이 들어 있습니다. 덮어쓰면 되돌릴 수 없습니다. 빈 열 E 를 쓰세요.';
+     return u==='E'?null:'이 실습에서는 E열에 받습니다. E 를 입력하세요.'}},
+  {type:'act',run:async ctx=>{
+    await runRows(ctx.sheet,RES1.map((v,i)=>['E'+(i+2),v]),
+      'Gemini 병렬처리 - 파이썬 병렬 처리 실행 중 (시간이 걸릴 수 있습니다)...','Gemini 병렬처리 - 처리 완료');
+    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],
+      text:'병렬 처리 완료!\n\n총 행 수: 12  ·  성공 12 / 실패 0\n모델: gemini-3.7-flash\n토큰: 입력 3,842 / 출력 2,106\n예상 비용(USD): $0.010779\n\n[로그 확인] C:\\MyTrustedFiles\\python_output.log\n  \'[크기초과]\', \'[첨부안됨]\' 메시지가 있으면\n  해당 파일이 전송되지 않은 것입니다.',
+      hint:'실제 화면에서는 여기서 [사용 내역 내보내기]로 누적 금액을 볼 수 있습니다.'});
+  }}],
+ make:sheet1,
+ quiz:[
+  {q:'모든 학생에게 똑같이 적용되는 지시문은 어디에 넣나요?',a:['C열(관찰 기록)','D열(추가 프롬프트)','G2 칸(공통 프롬프트)'],c:2,
+   why:'공통 프롬프트는 한 칸에만 적고 모든 행에 붙습니다.',hint:'행마다 달라지면 안 되는 규칙입니다.'},
+  {q:'결과 저장 열에 C를 적으면 어떻게 되나요?',a:['경고만 뜨고 넘어갑니다','관찰 메모가 지워지고 되돌릴 수 없습니다','자동으로 다음 빈 열에 저장됩니다'],c:1,
+   why:'이 추가기능이 쓴 값은 Ctrl+Z로 되돌아오지 않습니다. 결과 열은 늘 빈 열로.',hint:'0단계 안전 수칙 첫 번째 카드를 다시 보세요.'},
+  {q:'220행을 돌릴 때 동시 실행 수를 30으로 올리면?',a:['항상 더 빠르고 좋습니다','키 등급에 따라 오류가 늘 수 있어 오류가 나면 절반으로 낮춥니다','30은 넣을 수 없는 값입니다'],c:1,
+   why:'무료 키는 8, Tier 1은 20, Tier 2/3은 30이 권장값입니다.',hint:'창에 적힌 등급별 추천값을 떠올려 보세요.'}]});
+
+/* ══════════ 미션 2 ══════════ */
+const MD=['오늘은 친구들과 함께 운동장에서 축구를 했다. 우리 팀이 이겨서 정말 기뻤다.',
+ '나는 수학이 어려웠지만 포기하지 않고 끝까지 풀었습니다.',
+ '체육대회 때 우리 반이 일등을 했다. 정말 기분이 좋았다.',
+ '도서관에서 책을 읽는 것은 나의 취미이다. 왜냐하면 재미있기 때문이다.',
+ '과학 실험에서 물질의 변화를 관찰했다. 색깔이 변하는 것이 신기했다.',
+ '축구부 훈련이 힘들었지만 대회에서 이길 수 있다는 생각으로 견뎠다.',
+ '영어 시간에 원어민 선생님과 대화를 나눴다. 처음엔 떨렸는데 나중엔 재밌었다.',
+ '친구랑 다퉜지만 먼저 사과했더니 마음이 편해졌다.',
+ '학급 회의를 진행하면서 여러 의견을 듣는 것이 중요하다는 걸 느꼈다.',
+ '기술 시간에 만든 나무 의자가 생각보다 튼튼해서 뿌듯했다.',
+ '합창 대회를 준비하면서 화음을 맞추는 것이 얼마나 어려운지 알 수 있었다.',
+ '현장 체험 학습에서 무거운 짐을 들어 드렸더니 선생님이 칭찬해 주셨다.'];
+const SUM=['띄어쓰기 3곳, 맞춤법 1곳(기뻣다 → 기뻤다)을 고쳤습니다.',
+ '띄어쓰기 1곳, 맞춤법 1곳(풀었읍니다 → 풀었습니다)을 고쳤습니다.',
+ '띄어쓰기 3곳, 문장 부호 1곳(마침표 누락)을 고쳤습니다.',
+ '띄어쓰기 3곳, 문장 부호 1곳을 고쳤습니다.',
+ '띄어쓰기 2곳, 맞춤법 1곳(관찰햇다 → 관찰했다)을 고쳤습니다.',
+ '띄어쓰기 2곳, 문장 부호 1곳을 고쳤습니다.',
+ '띄어쓰기 1곳, 맞춤법 2곳(나눳다, 떨렸는대)을 고쳤습니다.',
+ '띄어쓰기 2곳, 문장 부호 1곳을 고쳤습니다.',
+ '띄어쓰기 3곳, 맞춤법 1곳(느꼇다 → 느꼈다)을 고쳤습니다.',
+ '띄어쓰기 3곳, 문장 부호 1곳을 고쳤습니다.',
+ '띄어쓰기 3곳, 문장 부호 1곳을 고쳤습니다.',
+ '띄어쓰기 3곳, 맞춤법 1곳(주셧다 → 주셨다)을 고쳤습니다.'];
+const PRI=['한글 맞춤법 제2항 띄어쓰기 원칙과 제18항 불규칙 활용을 적용했습니다.',
+ '보조 용언 않다는 앞말과 띄어 쓰며, -읍니다는 -습니다가 표준입니다.',
+ '의존 명사 때는 띄어 쓰고, 문장이 끝나면 마침표를 찍습니다.',
+ '의존 명사 것, 때문은 앞말과 띄어 씁니다.',
+ '하였다의 준말은 했다이며 햇다로 적지 않습니다.',
+ '의존 명사 수는 앞말과 띄어 씁니다.',
+ '연결 어미는 -는데로 적고 -는대는 인용 표현일 때만 씁니다.',
+ '-하다가 붙은 파생어와 보조 용언 지다는 앞말에 붙여 씁니다.',
+ '의존 명사 것, 걸은 띄어 쓰며 하였다의 준말은 했다입니다.',
+ '-하다가 붙은 파생어는 앞말에 붙여 씁니다.',
+ '의존 명사 수는 앞말과 띄어 씁니다.',
+ '보조 용언 드리다, 주다는 띄어 씀을 원칙으로 합니다.'];
+const RAW2=i=>`## 첨삭 결과\n\n**교정된 문장:** ${MD[i]}\n\n**수정 요약:** ${SUM[i]}\n\n**교정 원칙 반영:** ${PRI[i]}\n\n---`;
+const CLN2=i=>`첨삭 결과\n\n교정된 문장: ${MD[i]}\n\n수정 요약: ${SUM[i]}\n\n교정 원칙 반영: ${PRI[i]}`;
+
+function sheet2(){
+  const c={A1:'번호',B1:'학생',C1:'학생 원문',D1:'AI 첨삭 결과 (마크다운 범벅)',I1:'↓ 분할 결과'};
+  STU.forEach((s,i)=>{c['A'+(i+2)]=i+1;c['B'+(i+2)]=s;
+    c['C'+(i+2)]='(학생이 쓴 원래 문장)';c['D'+(i+2)]=RAW2(i)});
+  return new Sheet({name:'1_마크다운 정리하기',tabs:['① 시작 안내','1_마크다운 정리하기','정답 예시'],
+    cols:['A','B','C','D','E','F','G','H','I','J','K'],
+    w:{A:40,B:48,C:82,D:186,E:8,F:8,G:8,H:8,I:160,J:140,K:152},n:13,cells:c});
+}
+M.push({n:2,title:'정리하고 나누기 — 마크다운 지우기 · 한 칸을 세 칸으로',mins:'9분  ★ 핵심',
+ lead:'AI가 준 답은 기호 범벅에 세 가지 내용이 한 칸에 뭉쳐 있습니다. 두 기능으로 정리합니다.',
+ why:`<p>AI 답을 그대로 인쇄하면 <code>**볼드**</code>, <code>## 제목</code> 같은 기호가 그대로 찍힙니다.
+   또 답 하나에 '교정된 문장 / 수정 요약 / 교정 원칙' 세 가지가 뭉쳐 있어 정렬도 필터도 안 됩니다.</p>
+   <p>① <b>마크다운 문법 기호, 빈 줄 정리</b> 로 기호를 지우고 →
+      ② <b>셀 내용 행 단위 분할 기록기</b> 로 세 칸으로 나눕니다.</p>`,
+ cards:[
+  {h:'되돌리기가 안 됩니다',p:'두 기능 모두 셀 값을 직접 덮어씁니다. Ctrl+Z 무효입니다.',fix:'시트 탭 오른쪽 클릭 → 이동/복사 → 복사본 만들기'},
+  {h:'출력 열을 원본 열로',p:'분할 출력 열을 D로 적으면 원본이 사라집니다.',fix:'출력 열은 빈 열(I)로'},
+  {h:'기준에 콜론을 빠뜨림',p:'"정답:" 대신 "정답"이라 적으면 구분자 모드로 바뀌어 칸 수가 달라집니다.',fix:'라벨로 자를 땐 콜론(:)까지'}],
+ cmd:'마크다운 문법 기호, 빈 줄 정리',
+ cmds:{'마크다운 문법 기호, 빈 줄 정리':0,'셀 내용 행 단위 분할 기록기':0},
+ steps:['[일반 기능] → [마크다운 문법 기호, 빈 줄 정리] → 범위 선택 창에서 D2:D13 드래그','옵션 1,2,4,6,11 입력 → [예]',
+  '[일반 기능] → [셀 내용 행 단위 분할 기록기]','범위 D2:D13','기본 분할 기준 → [예]',
+  '출력 위치 → [아니오]','출력 열 → I'],
+ wiz:ctx=>[
+  {type:'pick',title:'마크다운 정리 - 범위 선택',want:'D2:D13',
+   text:'마크다운 문법을 정리할 셀 범위를 마우스로 드래그하여 선택하세요.\n(시트를 스크롤하며 확인할 수 있습니다)\n예) 단일 셀: A1\n    범위: A1:D100\n    전체 열: A:A 또는 A:D',
+   hint:'AI 결과가 있는 D2 부터 D13 까지 드래그하세요.',
+   check:v=>v==='D2:D13'?null:'AI 결과는 D열 2~13행에 있습니다. D2:D13 을 고르세요. (지금 고른 것: '+v+')'},
+  {type:'input',title:'마크다운 정리 옵션 선택',def:'1,2,4',
+   text:'제거할 마크다운 문법 기호를 선택하세요:\n\n번호를 쉼표로 구분하여 입력 (예: 1,2,5)\n모두 선택: 0 또는 all\n\n1. 볼드 (**, __)\n2. 이탤릭 (*, _)\n3. 취소선 (~~)\n4. 인라인 코드 (`)\n5. 코드 블록 (```)\n6. 헤딩 (#, ##, ###)\n7. 링크 ([텍스트](URL))\n8. 이미지 (![alt](URL))\n9. 인용 (>)\n10. 리스트 (-, *, +, 1.)\n11. 수평선 (---, ***)\n12. 각주 ([^1])\n13. HTML 태그 (<u>, <b>, <i> 등)\n14. 빈 줄 (공백만 있는 줄 포함)',
+   hint:'기본값 1,2,4 를 지우고  1,2,4,6,11  을 입력하세요. (헤딩과 수평선까지 지웁니다)',
+   check:v=>{const s=new Set(v.split(',').map(x=>x.trim()));
+     return (s.has('6')&&s.has('11')&&s.has('1'))?null:
+     '이 자료에는 ## 헤딩(6)과 --- 수평선(11)도 있습니다. 1,2,4,6,11 을 넣어 보세요.'}},
+  {type:'msg',title:'마크다운 정리',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'다음 마크다운 기호를 제거합니다:\n\n- Bold (**, __)\n- Italic (*, _)\n- Inline Code (`)\n- Heading (#)\n- Horizontal Rule (---)\n\n계속하시겠습니까?',
+   check:v=>v==='y'?null:'[예]를 눌러야 정리가 실행됩니다.'},
+  {type:'act',run:async ctx=>{
+    await runRows(ctx.sheet,MD.map((_,i)=>['D'+(i+2),CLN2(i)]),'마크다운 기호 제거 중입니다. 잠시만 기다려 주세요...','마크다운 정리 완료');
+    await msgbox({title:'마크다운 정리',icon:'✅',buttons:[['확인','ok',1]],
+      text:'완료!\n\n총 셀 수: 12\n변경된 셀: 12\n변경되지 않은 셀: 0'});
+    toast('이제 분할 기록기로 세 칸으로 나눕니다');
+  }},
+  {type:'pick',title:'범위 선택',want:'D2:D13',
+   text:'처리할 셀 또는 범위를 선택한 후 확인을 클릭하세요:\n(단일 셀 또는 여러 행을 선택할 수 있습니다)',
+   hint:'D2 부터 D13 까지 다시 한 번 끌어 선택하세요. 기능을 새로 실행하면 선택은 초기화됩니다.',
+   check:v=>v==='D2:D13'?null:'D2:D13 을 고르세요.'},
+  {type:'msg',title:'Microsoft Excel',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'기본 분할 기준을 사용하시겠습니까?\n\n  교정된 문장:\n  수정 요약:\n  교정 원칙 반영:\n\n(아니오 선택 시 사용자 정의 기준을 입력할 수 있습니다)',
+   hint:'이 실습 데이터가 바로 그 형태입니다. [예].',
+   check:v=>v==='y'?null:'이 자료의 라벨이 기본 기준과 똑같습니다. [예]로 진행해 보세요.'},
+  {type:'msg',title:'Microsoft Excel',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'분할된 내용을 어디에 출력하시겠습니까?\n\n예: 입력 셀의 오른쪽에 출력하려면 \'예\'\n    다른 위치에 출력하려면 \'아니오\'',
+   hint:'[아니오]를 골라 출력 열을 직접 정해 봅니다.',
+   check:v=>v==='n'?null:'[아니오]를 골라 출력 열을 직접 정하는 연습을 해 봅시다.'},
+  {type:'input',title:'출력 열 입력',def:'I',
+   text:'분할된 내용을 기록할 첫 번째 열 문자를 입력하세요.\n\n입력 예시:\n- I (I열)\n- i (소문자도 가능)\n- AA (AA열)\n\n입력한 열부터 오른쪽으로 분할 결과가 기록됩니다.',
+   hint:'기본값 I 를 그대로 두고 [확인].',
+   check:v=>{const u=v.trim().toUpperCase();
+     if(u==='D')return '출력 열을 D로 하면 원본이 지워집니다. 빈 열을 쓰세요.';
+     return u==='I'?null:'이 실습에서는 I 열에 받습니다.'}},
+  {type:'act',run:async ctx=>{
+    const list=[];
+    MD.forEach((_,i)=>{const r=i+2;list.push(['I'+r,MD[i]],['J'+r,SUM[i]],['K'+r,PRI[i]])});
+    await runRows(ctx.sheet,list,'분할 기록기 실행 중 (상태표시줄에는 표시되지 않습니다)','분할 완료');
+    await msgbox({title:'Microsoft Excel',icon:'✅',buttons:[['확인','ok',1]],
+      text:'내용 분할이 완료되었습니다.\n총 12개 행의 내용을 처리했습니다.\n최대 3개의 열에 내용을 기록했습니다.\n모든 셀 내용의 맨 앞과 맨 뒤 공백이 완벽히 제거되었습니다.'});
+  }}],
+ make:sheet2,
+ quiz:[
+  {q:'[셀 내용 행 단위 분할 기록기] 에서 기준을 "수정 요약:" 대신 "수정 요약" 이라고 적으면?',
+   a:['똑같이 동작합니다','구분자 모드로 바뀌어 첫 머리말이 한 칸 더 생깁니다','오류가 나서 실행되지 않습니다'],c:1,
+   why:'콜론으로 끝나면 라벨 모드, 아니면 구분자 모드입니다. 다만 이 규칙은 [셀 내용 행 단위 분할 기록기] 에만 해당합니다. '
+       +'미션 5의 [한글 파일 만들기] 는 모드 구분이 없고 기준 문구 사이를 그대로 잘라 옵니다.',
+   hint:'기준을 직접 적는 창에서 콜론이 어떤 구실을 했는지 떠올려 보세요.'},
+  {q:'마크다운 정리를 실행한 뒤 잘못된 걸 알았습니다. Ctrl+Z로 되돌아오나요?',a:['됩니다','안 됩니다. 미리 시트 복사본을 만들어 둬야 합니다','한 번만 됩니다'],c:1,
+   why:'셀 값을 직접 덮어쓰므로 엑셀의 되돌리기 대상이 아닙니다.',hint:'이 추가기능의 공통 특성입니다.'},
+  {q:'옵션 번호에 0 또는 all 을 넣으면?',a:['아무것도 안 지웁니다','14가지를 전부 지웁니다','기본값 1,2,4 로 처리합니다'],c:1,
+   why:'다만 10번 리스트까지 지워져 - 로 시작하는 항목 표시도 사라집니다.',hint:'창 위쪽 안내 문구를 다시 읽어 보세요.'}]});
+</script>
+<script>
+/* ══════════ 미션 3 ══════════ */
+const DIR='D:\\2026_현장체험학습\\가정통신문_원본\\';
+function sheet3(){
+  // ── 1장: 파일 이름 바꾸기 ─────────────────────────────
+  const c1={A1:'A · 원래 파일 경로',B1:'B · 새 파일 이름(수식)',C1:'C · 바뀐 경로',
+    E1:'번호',F1:'학생 이름'};
+  STU.forEach((s,i)=>{const r=i+2;c1['B'+r]='2-3_'+s+'_현장체험학습동의서';c1['E'+r]=i+1;c1['F'+r]=s});
+
+  // ── 2장: SETTINGS ────────────────────────────────────
+  const SET=[
+   ['OutputLogSheet','발송 결과','발송 결과를 기록할 시트 이름입니다. 비워두면 \'발송 결과\'를 사용합니다.'],
+   ['DefaultMailService','Gmail','기본 메일 서비스입니다. Gmail 권장입니다. (Gmail/Naver/Outlook 중 선택)'],
+   ['SenderEmail','user@gmail.com','보내는 사람 이메일 주소입니다. Gmail 사용 시 로그인 계정을 적습니다.'],
+   ['SenderPassword','','일부 SMTP(예: Naver)에서만 사용합니다. Gmail 사용 시 비워두세요.'],
+   ['OAuthApiKeyFolder','%APPDATA%\\All-in-one_document_assistant\\APIkey','Gmail API 자격파일(시크릿/토큰)이 저장된 폴더 경로입니다. 환경변수 사용 가능(%APPDATA% 등).'],
+   ['GmailClientSecretFile','client_secret.json','Gmail 클라이언트 시크릿 파일명입니다. 일반적으로 client_secret.json입니다.'],
+   ['GmailTokenFile','gmail_token.json','Gmail 토큰 파일명입니다. 일반적으로 gmail_token.json입니다.'],
+   ['ThrottleDelaySec','2','메일 간 전송 지연(초)입니다. 너무 빠른 전송을 방지합니다. 기본 2초.'],
+   ['MaxPerRun','','한 번 실행 시 최대 발송 건수입니다. 공백 가능하고, 메일 서버 정책을 준수해야 합니다.'],
+   ['RetryCount','0','실패 시 재시도 횟수입니다. 0이면 재시도하지 않습니다.']];
+  const c2={};
+  SET.forEach((row,i)=>{const r=i+1;c2['A'+r]=row[0];c2['B'+r]=row[1];c2['C'+r]=row[2]});
+
+  // ── 3장: MailSender ──────────────────────────────────
+  const HEAD=['이메일','제목','본문','이름','첨부1','첨부2','첨부3','참조','숨은참조',
+              'HTML여부','서비스','지연(초)','정렬'];
+  const GUIDE=['[필수] 수신자 이메일 주소(3행부터 작성)','[필수] 제목','[필수] 본문(HTML 사용 시 BodyIsHTML=yes)',
+   '[선택] 수신자 이름','[선택] 첨부 파일 절대 경로 1개만 입력','[선택] 첨부 파일 절대 경로 1개만 입력',
+   '[선택] 첨부 파일 절대 경로 1개만 입력','[선택] 참조(;) 구분','[선택] 숨은참조(;) 구분',
+   '[선택] HTML 본문 여부: yes/no (기본 no)','[선택] 메일 서비스(Naver|Gmail|Outlook). 기본 Gmail',
+   '[선택] 개별 지연(초)','[선택] 정렬 우선순위'];
+  const LET=['A','B','C','D','E','F','G','H','I','J','K','L','M'];
+  const c3={}, cls3={};
+  HEAD.forEach((h,i)=>{c3[LET[i]+'1']=h});
+  GUIDE.forEach((g,i)=>{c3[LET[i]+'2']=g; cls3[LET[i]+'2']='guide'});
+  const BODY=n=>n+' 학부모님께\n\n안녕하세요. 한빛중학교 2학년 3반 담임입니다.\n'
+    +'제출해 주신 현장 체험 학습 참가 동의서를 잘 받았습니다.\n'
+    +'확인하실 수 있도록 스캔본을 함께 보내 드립니다.\n\n감사합니다.\n한빛중학교 2학년 3반 담임 드림';
+  STU.forEach((s,i)=>{const r=i+3;
+    c3['A'+r]= i<3 ? '여기에_내_이메일_주소@gmail.com' : '';
+    c3['B'+r]='[한빛중 2-3] '+s+' 학생 현장 체험 학습 동의서 접수 확인';
+    c3['C'+r]=BODY(s); c3['D'+r]=s;
+    c3['E'+r]=DIR+'2-3_'+s+'_현장체험학습동의서.txt';
+    c3['K'+r]='Gmail';});
+
+  return new Sheet({
+    tabs:['① 시작 안내','1_파일 이름 한번에 바꾸기','SETTINGS','MailSender'],
+    pages:[
+      {name:'1_파일 이름 한번에 바꾸기',cols:['A','B','C','D','E','F'],
+       w:{A:280,B:200,C:280,D:20,E:38,F:80},n:13,cells:c1},
+      {name:'SETTINGS',cols:['A','B','C'],hdr:false,
+       w:{A:150,B:236,C:420},n:10,cells:c2,edit:['B3'],
+       note:'A열은 이름표, B열이 값, C열은 설명입니다. 머리글 줄이 따로 없고 1행부터 바로 값입니다.'},
+      {name:'MailSender',cols:LET,
+       w:{A:136,B:126,C:126,D:50,E:106,F:42,G:42,H:42,I:50,J:48,K:50,L:38,M:32},
+       n:14,cells:c3,cls:cls3,edit:['A3'],
+       note:'1행 = 제목 줄, 2행 = 회색 안내 줄, 데이터는 3행부터입니다.'}
+    ]});
+}
+
+// 발송 결과 시트를 만들어 붙인다 (실제 기능도 실행 후에 시트를 새로 만든다)
+/* 실제 추가기능처럼 [발송 결과] 시트는 지우지 않고 아래로 쌓는다.
+   (M15c_AutoMailer 의 WriteResultRow 는 마지막 행 다음에 이어 적는다) */
+function addSendResult(sheet,rows){
+  const H=['시간','서비스','이메일','이름','제목','상태','오류','첨부1','첨부2','첨부3','메시지ID','소요(ms)'];
+  const L=['A','B','C','D','E','F','G','H','I','J','K','L'];
+  const idx=sheet.idxOf('발송 결과');
+  const old=idx>=0?sheet.pages[idx]:null;
+  const cells=old?Object.assign({},old.cells):{};
+  const cls=old?Object.assign({},old.cls):{};
+  const banners=old?[].concat(old.mergeRow||[]):[];
+  if(!old)H.forEach((h,i)=>{cells[L[i]+'1']=h});
+  const from=old?(old.n+1):2;            // 앞선 배너 바로 다음 줄부터 이어 적는다
+  /* 실제 추가기능은 F열에 글자만 적습니다. 색을 칠하지 않습니다.
+     (색이 들어가는 곳은 맨 아래 초록 배너 행 하나뿐) */
+  rows.forEach((row,i)=>{const r=from+i;
+    row.forEach((v,j)=>{cells[L[j]+r]=v});});
+  const last=from+rows.length;           // 마지막 행 바로 다음 줄이 초록 줄
+  cells['A'+last]='메일 발송이 완료되었습니다. 성공: '
+    +rows.filter(r=>r[5]==='OK').length+'건 / 실패: '
+    +rows.filter(r=>r[5]!=='OK').length+'건  - 자세한 내역은 위 표를 확인하세요.';
+  cls['A'+last]='banner';
+  banners.push(last);
+  const page={name:'발송 결과',cols:L,
+    w:{A:104,B:52,C:142,D:46,E:160,F:42,G:66,H:56,I:40,J:40,K:104,L:52},
+    n:last,cells:cells,cls:cls,mergeRow:banners,
+    note:banners.length>1
+      ? '이 시트는 지워지지 않습니다. '+banners.length+'번 실행한 기록이 위에서부터 차례로 쌓여 있습니다. 방금 보낸 것은 맨 아래 초록 줄 위쪽입니다.'
+      : '이 시트는 지워지지 않고 아래로 계속 쌓입니다. 다시 실행하면 이 초록 줄 밑에 또 붙습니다.'};
+  if(idx>=0)sheet.pages[idx]=page; else {sheet.pages.push(page);sheet.tabs.push('발송 결과');}
+  sheet._resFrom=from; sheet._resRuns=banners.length;
+  sheet.show('발송 결과'); sheet.render();   // 이미 그 시트를 보고 있어도 새로 그린다
+  const g=sheet.host&&sheet.host.querySelector('.grid');
+  if(g)setTimeout(()=>{sheet.follow('A'+last)},60);
+  return sheet;
+}
+/* ═══════════ 메일 구간 (미션 3) ═══════════
+   ① 전체 따라 하기 와 ③ 메일 부분만 다시 하기 가 함께 씁니다.
+   실제 추가기능(M15c_AutoMailer)의 차례를 그대로 옮겼습니다.
+     메뉴 → [예] 서식 준비 → 기능 종료 → 두 시트 채우기
+     → 메뉴 한 번 더 → [아니오] → [예] → 발송                        */
+function MAIL3(ctx){return [
+  {type:'menu',cmd:'메일 자동 발송',title:'이제 메일을 보낼 차례입니다',icon:'✉️',
+   text:'파일 이름 12개는 다 바뀌었습니다.\n이제 학부모께 한 사람씩 따로 보냅니다.\n\n리본에서 직접 눌러 보세요.\n\n  [DRM AI v10.0] → [일반 기능] → [메일 자동 발송]\n\n노랗게 표시해 두었습니다.',
+   hint:'[메일 자동 발송] 메뉴는 두 번 누르게 됩니다. 왜 두 번인지는 곧 알게 됩니다.',
+   bar:'리본에서 [ 메일 자동 발송 ] 을 눌러 주세요 — 그만두려면 Esc'},
+
+  {type:'msg',title:'메일 자동 발송 - 폼 준비',icon:'❓',buttons:[['예','y',1],['아니오','n'],['취소','c']],
+   text:'메일 자동 발송 서식을 생성/보정할까요?\n\n예: 서식 생성 후 현재 통합문서에서 확인\n아니오: 기존 시트로 발송 진행\n취소: 종료',
+   sq:'첫 번째 실행',
+   hint:'★ 첫 번째 실행입니다. 여기서는 [예] — SETTINGS · MailSender 두 시트를 먼저 갖춥니다.',
+   check:v=>v==='y'?null:'이번에는 [예] 입니다. [예] 가 두 시트를 만들어 주거나, 모자란 칸을 보태 줍니다.'},
+
+  {type:'act',run:async ctx=>{
+    const sh=ctx.sheet;
+    sh.setStatus('메일 자동 발송: 준비 중입니다...');
+    await new Promise(r=>setTimeout(r,500));
+    sh.setStatus('메일 자동 발송: 서식 준비 중입니다...');
+    await new Promise(r=>setTimeout(r,1100));
+  }},
+
+  {type:'msg',title:'서식 준비',icon:'ℹ️',buttons:[['확인','ok',1]],sq:'첫 번째 실행',
+   text:'메일 자동 발송 서식(SETTINGS/MailSender) 준비가 완료되었습니다.',
+   hint:'★ 기능이 여기서 끝났습니다. [예] 는 서식만 갖추고 종료하는 선택입니다. 메일은 아직 한 통도 나가지 않았습니다. (창을 닫으면 아래 상태표시줄도 비워집니다)',
+   after:async (v,c)=>{c.sheet.setStatus('준비')}},
+
+  {type:'tab',page:'SETTINGS',title:'두 시트가 하는 일',
+   text:'이번 실행으로 두 시트가 갖추어졌습니다.\n\n  SETTINGS   — 누가, 어떤 방식으로 보내는가\n  MailSender — 누구에게, 무엇을 보내는가\n\n실습 파일에는 두 시트가 이미 들어 있어서\n이번 [예] 는 모자란 칸을 보태는 \'보정\' 만 했습니다.\n빈 통합문서였다면 이때 두 시트가 새로 생깁니다.\n\n두 시트가 이미 있었으므로 실제 엑셀에서는\n화면이 그대로 있습니다. 아래쪽 시트 탭에서\nSETTINGS 를 직접 눌러야 합니다.\n(시트가 새로 만들어지는 경우에는 그 시트가 열린 채로 남습니다.)\n연습창에서는 대신 눌러 드렸습니다.',
+   bar:'[ SETTINGS ] 시트입니다 — A열은 이름표, B열이 값, C열은 설명',
+   hint:'고칠 것은 B열뿐입니다. C열 설명은 추가기능이 적어 준 것이라 지우지 않아도 됩니다.'},
+
+  {type:'edit',page:'SETTINGS',ref:'B3',title:'SETTINGS — 보내는 사람 주소',
+   text:'SenderEmail 이라고 적힌 줄(서식을 막 만들면 3행)의 B칸에\n보내는 사람 주소를 적습니다.\n\n이 시트에는 제목 줄이 따로 없습니다. 1행부터 바로 값입니다.\n  A열 = 이름표   B열 = 값   C열 = 설명\n\n이 값이 비어 있으면 발송이 시작되지 않고\n\'SETTINGS 시트의 필수 값이 비어 있습니다. 폼을 확인하세요.\'\n라는 안내가 뜨고 끝납니다.\n\nSETTINGS 에서 반드시 채워야 하는 값은 이 하나뿐입니다.',
+   retry:'3행 SenderEmail 의 B칸에 보내는 사람 주소를 적고 Enter 를 누르세요.',
+   hint:'[확인] 을 누르면 깜빡이는 B3 칸에 커서가 놓입니다. 안 놓였으면 그 칸을 한 번 누르세요. 주소를 적고 Enter. (예: hongkildong@gmail.com)',
+   bar:'깜빡이는 B3 칸에 보내는 사람 주소를 적고 Enter — 그만두려면 Esc',
+   check:v=>{ const t=String(v==null?'':v).trim();
+     if(!t)return 'SETTINGS 시트의 필수 값이 비어 있습니다. 폼을 확인하세요.';
+     if(t==='user@gmail.com')return '기본값 그대로입니다. 선생님이 실제로 쓰는 주소로 바꿔 보세요.';
+     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)?null:'이메일 주소 모양이 아닙니다. (예: hongkildong@gmail.com)  ※ 이 검사는 연습창이 하는 것입니다. 실제 추가기능은 이 칸이 비어 있는지만 보고, 비어 있지 않으면 그대로 통과시킵니다.';}},
+
+  {type:'msg',title:'잠깐 — Gmail 로 보내려면',icon:'🔑',buttons:[['확인','ok',1]],
+   text:'SETTINGS 의 나머지 값은 그대로 두면 됩니다. 다만 Gmail 은 처음 한 번 인증이 필요합니다.\n\n5행 OAuthApiKeyFolder\n  %APPDATA%\\All-in-one_document_assistant\\APIkey\n  ← 이 폴더에 아래 두 파일이 있어야 합니다.\n\n6행 GmailClientSecretFile → client_secret.json\n  구글에서 받아 선생님이 직접 넣는 파일입니다.\n\n7행 GmailTokenFile → gmail_token.json\n  최초 인증을 마치면 자동으로 만들어집니다. 직접 만들지 않습니다.\n\n4행 SenderPassword 는 네이버 메일을 쓸 때만 씁니다. Gmail 이면 비워 둡니다.',
+   hint:'이 폴더는 [교사를 위한 올인원 도우미] 가 쓰는 폴더와 같습니다. 한쪽에서 인증하면 양쪽 다 됩니다.'},
+
+  {type:'msg',title:'최초 인증은 올인원 도우미에서',icon:'💡',buttons:[['확인','ok',1]],
+   text:'처음 한 번은 브라우저에서 구글 계정 동의를 해야 합니다.\n\n권장 : [교사를 위한 올인원 도우미] 를 켜고\n       [보안·발송·설치] → [메일 일괄 발송] 에서 한 번 보내 보세요.\n       브라우저가 열리고, 동의하면 gmail_token.json 이 만들어집니다.\n\n엑셀에서 바로 하면 창이 숨겨진 채로 실행되어\n브라우저만 갑자기 뜨고 엑셀은 멈춘 것처럼 보입니다.\n\n한 번 인증해 두면 그 다음부터는 브라우저가 열리지 않습니다.',
+   hint:'권한은 \'Gmail 메시지 보내기\' 하나뿐입니다. 받은 편지함을 읽지 않습니다.'},
+
+  {type:'tab',page:'MailSender',title:'이제 MailSender 시트',
+   text:'누구에게 무엇을 보낼지 적는 시트입니다.\n\n  1행 = 제목 줄 (이메일 / 제목 / 본문 / 이름 / 첨부1~3 …)\n  2행 = 회색 안내 줄 — 여기는 비워 둡니다\n  3행부터 = 실제 보낼 내용\n\n[필수] 는 이메일 · 제목 · 본문 세 칸입니다.\n셋 중 하나라도 비면 그 행은 조용히 건너뜁니다.\n\n제목 · 본문 · 첨부는 이 연습 파일에 미리 채워 두었습니다.\n선생님이 채울 곳은 A열 이메일 하나입니다.',
+   bar:'[ MailSender ] 시트로 넘어왔습니다 — 3행부터가 실제 내용입니다',
+   hint:'2행에 데이터를 적는 실수가 가장 많습니다. 반드시 3행부터 적으세요. 첨부는 절대 경로만 되고, 그 자리에 파일이 없으면 경고 없이 조용히 빠집니다.'},
+
+  {type:'edit',page:'MailSender',ref:'A3',title:'MailSender — 받는 사람',
+   text:'연습이므로 선생님 주소로 보내 봅니다.\n\nA3 칸의  여기에_내_이메일_주소@gmail.com  을\n지우고 선생님 주소로 바꾸세요.',
+   retry:'A3 칸의 자리표시자를 지우고 선생님 주소를 적은 뒤 Enter 를 누르세요.',
+   hint:'[확인] 을 누르면 깜빡이는 A3 칸에 커서가 놓이고 글자가 모두 선택됩니다. 안 놓였으면 그 칸을 한 번 누르세요. 그대로 주소를 적고 Enter.',
+   bar:'깜빡이는 A3 칸에 받는 사람 주소를 적고 Enter — 그만두려면 Esc',
+   check:v=>{ const t=String(v==null?'':v).trim();
+     if(!t)return '이메일이 빈 행은 발송 대상에서 조용히 빠집니다. 주소를 적어 보세요.';
+     if(t.indexOf('여기에')>=0)return '자리표시자를 지우고 실제 주소를 적어 보세요.';
+     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)?null:'이메일 주소 모양이 아닙니다.  ※ 이 검사는 연습창이 하는 것입니다. 실제 추가기능은 @ 가 있는지만 봅니다.';}},
+
+  {type:'act',run:async ctx=>{
+    const v=ctx.sheet.get('A3','MailSender');
+    ctx.sheet.set('A4',v,'MailSender'); ctx.sheet.set('A5',v,'MailSender');
+    ctx.sheet.render(); ctx.sheet.reveal();
+    toast('연습이니 3~5행에 같은 주소를 넣었습니다. 6행부터는 비워 두어 건너뜁니다');
+    await new Promise(r=>setTimeout(r,1000));
+  }},
+  {type:'msg',title:'같은 주소가 세 줄인데 세 통이 나갑니다',icon:'💡',buttons:[['확인','ok',1]],
+   text:'중복 발송을 막는 장치가 있지만, 같은 줄로 보는 기준은\n받는 사람 · 제목 · 본문 · HTML여부 · 첨부1~3 입니다.\n\n3~5행은 주소만 같고 제목 · 본문 · 첨부가 학생마다 다릅니다.\n그래서 서로 다른 메일로 보아 세 통이 나갑니다.\n\n반대로 주소 · 제목 · 본문 · 첨부가 똑같은 줄을 두 번 적으면\n한 통만 나갑니다. 서비스(K열)나 이름(D열)만 달라도\n같은 것으로 보아 하나로 합쳐집니다.',
+   hint:'참조 · 숨은참조도 기준에 들어가지 않습니다. 그것만 다른 두 줄도 한 통으로 합쳐집니다.'},
+
+  {type:'menu',cmd:'메일 자동 발송',title:'다 채웠습니다 — 메뉴를 한 번 더',icon:'🔁',
+   text:'두 시트를 다 채웠습니다.\n\n그런데 아까 [예] 를 고른 순간 기능은 이미 끝났습니다.\n서식을 갖추는 것과 실제로 보내는 것은 다른 실행입니다.\n\n그래서 [메일 자동 발송] 을 한 번 더 눌러야 합니다.\n이번에는 같은 질문에 [아니오] 를 고릅니다.\n\n  [DRM AI v10.0] → [일반 기능] → [메일 자동 발송]',
+   hint:'★ 가장 많이 막히는 지점입니다. [예] 로는 메일이 한 통도 나가지 않습니다.',
+   bar:'리본에서 [ 메일 자동 발송 ] 을 한 번 더 눌러 주세요 — 그만두려면 Esc'},
+
+  {type:'msg',title:'메일 자동 발송 - 폼 준비',icon:'❓',buttons:[['예','y',1],['아니오','n'],['취소','c']],
+   text:'메일 자동 발송 서식을 생성/보정할까요?\n\n예: 서식 생성 후 현재 통합문서에서 확인\n아니오: 기존 시트로 발송 진행\n취소: 종료',
+   sq:'두 번째 실행',
+   hint:'★ 두 번째 실행입니다. 이번에는 [아니오] — 지금 있는 시트 그대로 발송으로 넘어갑니다. (기본 단추가 [예] 이니 엔터를 조심하세요)',
+   check:v=>v==='n'?null:'[예] 를 고르면 또 서식만 갖추고 끝납니다. 보내려면 [아니오] 를 고르세요. 이 점이 가장 헷갈리는 부분입니다.'},
+
+  {type:'msg',title:'메일 자동 발송',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   sq:'두 번째 실행',
+   text:'지금 바로 메일 발송을 진행할까요?',
+   hint:'미리보기가 없습니다. [예] 를 누르면 바로 나갑니다. 실제 업무에서는 내 주소 1~3건으로 먼저 시험해 보세요.',
+   check:v=>v==='y'?null:'[예] 를 눌러야 발송됩니다. 이 연습창에서는 실제로 나가지 않으니 안심하세요.'},
+
+  {type:'act',run:async ctx=>{
+    const sh=ctx.sheet;
+    const to=sh.get('A3','MailSender')||'(받는 사람)';
+    const names=['김도윤','박서연','이하준'];
+    sh.setStatus('메일 자동 발송: 설정을 불러오는 중입니다...');
+    await new Promise(r=>setTimeout(r,450));
+    sh.setStatus('메일 자동 발송: 결과 기록 시트를 준비하는 중입니다...');
+    await new Promise(r=>setTimeout(r,450));
+    sh.setStatus('메일 자동 발송: 발송 대상을 수집하는 중입니다...');
+    await new Promise(r=>setTimeout(r,450));
+    sh.setStatus('메일 자동 발송: 총 3건 전송을 시작합니다...');
+    await new Promise(r=>setTimeout(r,500));
+    for(let i=1;i<=3;i++){
+      sh.setStatus('메일 자동 발송: '+i+'/3 - '+to+' (시도 1/1)...');
+      await new Promise(r=>setTimeout(r,750));
+      sh.setStatus('메일 자동 발송: '+i+'/3 처리 완료 - 결과: OK');
+      await new Promise(r=>setTimeout(r,600));   // ThrottleDelaySec 2초 (연습창은 줄여 보여 줍니다)
+    }
+    const rows=names.map((nm,i)=>[
+      '2026-08-25 19:0'+(i+1)+':1'+i, 'Gmail', to, nm,
+      '[한빛중 2-3] '+nm+' 학생 현장 체험 학습 동의서 접수 확인',
+      'OK','',
+      DIR+'2-3_'+nm+'_현장체험학습동의서.txt','','',
+      '19a2f0c3d4e5b67'+i, '']);
+    addSendResult(sh,rows);
+    sh.reveal();
+    sh.setStatus('준비');
+  }},
+  {type:'msg',title:'메일 자동 발송',icon:'✅',buttons:[['확인','ok',1]],sq:'두 번째 실행',
+   text:'메일 자동 발송 완료\n\n성공: 3건\n실패: 0건',
+   hint:'실패가 있어도 이 창은 똑같이 뜹니다. 다른 점은 \'실패: N건\' 이라는 숫자뿐이니 그 숫자를 꼭 보세요.'},
+  {type:'msg',title:'발송 결과 시트 읽는 법',icon:'🗂️',buttons:[['확인','ok',1]],
+   text:'F열 상태\n  OK   = 보냈습니다\n  FAIL = 실패했습니다\n  색은 칠해지지 않습니다. 글자를 눈으로 훑어야 합니다.\n\nG열 오류\n  실패한 까닭과 해결 방법이 적힙니다. 성공이면 빈칸입니다.\n\nK열 메시지ID\n  구글이 매긴 번호입니다. 이 값이 있으면 실제로 나간 것입니다.\n  네이버·아웃룩으로 보내면 이 칸은 늘 비어 있습니다.\n\nL열 소요(ms)\n  머리글만 있고 값은 늘 비어 있습니다. 지금 판에서는 재지 않습니다.\n\n맨 아래 초록 줄에 성공·실패 건수가 요약됩니다.\n이 시트에서 색이 들어가는 곳은 그 초록 줄 하나뿐입니다.',
+   hint:c=>'6~14행은 이메일이 비어 있어 아예 발송 대상에 담기지 않았습니다. 그래서 이번에 붙은 줄은 3줄뿐입니다.'
+     +((c.sheet._resRuns||1)>1
+       ? ' 이 시트에는 앞서 보낸 기록도 남아 있어 지금 초록 줄이 '+c.sheet._resRuns+'개입니다. 방금 것은 맨 아래 묶음입니다.'
+       : '')
+     +' 실패한 경우가 어떻게 보이는지는 [② 발송이 실패하면 어떻게 보이나] 로 이어서 보세요.'}
+]}
+
+M.push({n:3,title:'파일과 메일 — 이름 12개 한 번에, 개별 메일 발송',mins:'14분  (심화)',
+ lead:'스캔한 동의서 12장의 이름을 학생 이름으로 바꾸고, 학부모께 한 사람씩 따로 메일을 보냅니다. 설정·서식·발송 결과를 시트에서 직접 만져 봅니다.',
+ why:`<p>스캔하면 파일 이름이 <code>스캔_0001.txt</code> 처럼 붙습니다. 하나씩 열어 보고 고치면 20분입니다.</p>
+  <p>세 기능을 이어 씁니다. <b>폴더 내 파일 목록 가져오기</b> → <b>파일 경로로 파일명 변경</b> → <b>메일 자동 발송</b>.</p>
+  <p>B열에는 이미 수식이 있습니다. <code>="2-3_"&amp;F2&amp;"_현장체험학습동의서"</code> —
+     F열 이름만 바꾸면 새 파일 이름이 저절로 따라옵니다.</p>`,
+ cards:[
+  {h:'진짜 파일 이름이 바뀝니다',p:'되돌리기 없음. 학교 공용 폴더에서 처음 시도하면 사고가 납니다.',fix:'복사본 폴더에서 먼저 연습'},
+  {h:'파일 이름만 적으면 못 찾습니다',p:'A열에는 C:\\ 로 시작하는 전체 경로가 있어야 합니다.',fix:'[폴더 내 파일 목록 가져오기]로 자동 입력'},
+  {h:'메일은 미리보기가 없습니다',p:'[예]를 누르면 바로 나갑니다. 테스트 발송 기능이 없습니다.',fix:'내 주소 1~3건으로 먼저 확인'},
+  {h:'[예]로는 메일이 안 나갑니다',p:'첫 질문의 [예]는 서식만 만들고 끝납니다. 가장 많이 막히는 지점입니다.',fix:'두 번째 실행에서 [아니오] → [예]'},
+  {h:'실패는 숫자로만 알려 줍니다',p:'완료 창도 초록 줄도 \'완료되었습니다\' 라고만 나옵니다. 경고 아이콘도 없습니다.',fix:'\'실패: 0건\' 인지 숫자를 확인'}],
+ cmd:'폴더 내 파일 목록 가져오기',
+ cmdNote:'이 미션에서는 세 메뉴를 노랗게 표시했습니다. 앞의 두 개는 <b>① 전체 따라 하기</b> 를 처음부터 시작하고, <b>[메일 자동 발송]</b> 은 <b>③ 메일 부분만 다시 하기</b> 를 시작합니다.',
+ cmds:{'폴더 내 파일 목록 가져오기':0,'파일 경로로 파일명 변경':0,'메일 자동 발송':2},
+ steps:['[일반 기능] → [폴더 내 파일 목록 가져오기] → 폴더 선택 → 출력 위치 A2',
+  '[일반 기능] → [파일 경로로 파일명 변경] → 범위 A2:A13, 새 이름 열 B, 결과 열 C',
+  '[일반 기능] → [메일 자동 발송]  (첫 번째)  → [예] → SETTINGS·MailSender 가 갖추어지고 기능이 끝남',
+  'SETTINGS 시트 3행 SenderEmail 의 B칸에 보내는 사람 주소',
+  'MailSender 시트 3행부터 받는 사람 이메일 (제목·본문·첨부는 이미 채워져 있음, 2행은 회색 안내 줄이라 비워 둠)',
+  '[일반 기능] → [메일 자동 발송]  (두 번째)  → [아니오] → [예] → 이때 비로소 발송',
+  '[발송 결과] 시트에서 F열 상태와 맨 아래 실패 건수 확인'],
+ startPage:'1_파일 이름 한번에 바꾸기',
+ runs:[{label:'① 전체 따라 하기',short:'① 전체',steps:ctx=>[
+  {type:'act',run:async ctx=>{
+    /* 두 번째로 눌렀을 때도 처음과 같은 상태에서 시작하도록 메일 칸을 되돌립니다 */
+    const sh=ctx.sheet;
+    sh.set('B3','user@gmail.com','SETTINGS');
+    ['A3','A4','A5'].forEach(r=>sh.set(r,'여기에_내_이메일_주소@gmail.com','MailSender'));
+    const ps=sh.at('SETTINGS'); if(ps&&ps.cls)delete ps.cls['B3'];
+    const pm=sh.at('MailSender'); if(pm&&pm.cls){delete pm.cls['A3'];delete pm.cls['A4'];delete pm.cls['A5'];}
+    sh.render();
+  }},
+  {type:'msg',title:'입력 방식 선택',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'폴더 경로 입력 방식을 선택하세요:\n\n[예]: 폴더 경로를 직접 입력\n[아니오]: 대화상자에서 폴더를 클릭해서 선택',
+   hint:'[아니오]를 골라 폴더를 눈으로 고르는 쪽이 실수가 적습니다.',
+   check:v=>v==='n'?null:'직접 입력은 오타가 나기 쉽습니다. [아니오]로 골라 보세요.'},
+  {type:'msg',title:'폴더 선택',icon:'📁',buttons:[['확인','ok',1]],
+   text:'선택한 폴더:\n'+DIR+'\n\n(연습창에서는 이 폴더가 이미 골라진 것으로 합니다)'},
+  {type:'pick',title:'출력 위치 선택',want:'A2',
+   text:'파일 목록을 입력할 시작 셀을 선택하세요:\n(파일 목록은 선택한 셀부터 아래쪽으로 입력됩니다)',
+   hint:'1행은 제목 줄이니 A2 를 클릭하세요.',
+   check:v=>v==='A2'?null:'제목 줄을 덮지 않도록 A2 를 고르세요. (지금 고른 것: '+v+')'},
+  {type:'msg',title:'하이퍼링크 적용 선택',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'파일 경로에 하이퍼링크를 적용할까요?\n\n[예]: 클릭하면 해당 파일이 열리는 링크로 입력\n[아니오]: 일반 텍스트로 입력',
+   hint:'[예]로 하면 셀을 눌러 파일을 바로 열어 확인할 수 있습니다.'},
+  {type:'act',run:async ctx=>{
+    await runRows(ctx.sheet,STU.map((_,i)=>['A'+(i+2),DIR+'스캔_'+String(i+1).padStart(4,'0')+'.txt']),
+      '파일 목록 입력 중...','파일 목록 입력 완료');
+  }},
+  {type:'msg',title:'Microsoft Excel',icon:'✅',buttons:[['확인','ok',1]],
+   text:'총 12개의 파일 목록을 입력했습니다.\n(하이퍼링크 적용: 클릭하면 해당 파일이 열립니다)',
+   hint:'스캔_0001 부터 0012 까지 순서가 뒤섞이지 않았습니다. 사람이 읽는 순서(자연 정렬)로 들어옵니다.'},
+  {type:'msg',title:'파일명 변경 안내',icon:'ℹ️',buttons:[['예','y',1],['아니오','n']],
+   text:'파일 경로로 파일명 변경 기능\n\n사용법:\n1단계: 파일 경로가 있는 범위 선택 (예: A1:A10)\n2단계: 새 파일명이 있는 열 입력 (예: B)\n3단계: 새 경로 출력할 열 입력 (예: C)\n\n팁: 새 파일명에 확장자가 있어도 자동으로 처리됩니다\n   - 확장자 없음: \'새문서\' → \'새문서.txt\'\n   - 확장자 있음: \'새문서.pdf\' → \'새문서.txt\' (원본 확장자 유지)\n\n계속 진행하시겠습니까?',
+   check:v=>v==='y'?null:'[예]를 눌러 진행합니다.'},
+  {type:'pick',title:'1단계: 파일 경로 범위 선택',want:'A2:A13',
+   text:'1단계: 파일 경로가 있는 범위를 드래그하여 선택하세요\n\n예시: A1:A10 (10개 파일의 전체 경로)\n\n주의: 범위를 정확히 선택해주세요!',
+   hint:'방금 채워진 A2 부터 A13 까지 드래그.',
+   check:v=>v==='A2:A13'?null:'경로는 A2:A13 에 있습니다. (지금 고른 것: '+v+')'},
+  {type:'input',title:'2단계: 새 파일명 열 입력',def:'B',
+   text:'2단계: 새 파일명이 있는 열을 입력하세요\n- B (B열)\n- C (C열)\n- AA (AA열)\n\n참고: 12개 파일과 자동 매칭됩니다',
+   hint:'새 이름 수식이 B열에 있습니다. 기본값 그대로 [확인].',
+   check:v=>v.trim().toUpperCase()==='B'?null:'새 이름은 B열에 있습니다.'},
+  {type:'input',title:'3단계: 새 파일 경로 출력 열 입력',def:'C',
+   text:'3단계: 새 파일 경로를 출력할 열을 입력하세요\n\n참고: 12개 행에 결과가 출력됩니다\n출력 내용: 새 파일명이 반영된 전체 경로',
+   hint:'비어 있는 C열. 기본값 그대로 [확인].',
+   check:v=>{const u=v.trim().toUpperCase();
+     if(u==='A'||u==='B')return '그 열에는 값이 있습니다. 덮어쓰면 다시 만들 수 없습니다. C 를 쓰세요.';
+     return u==='C'?null:'이 실습에서는 C열에 받습니다.'}},
+  {type:'msg',title:'하이퍼링크 적용 선택',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'새 파일 경로에 하이퍼링크를 적용할까요?\n\n[예]: 클릭하면 해당 파일이 열리는 링크로 출력\n[아니오]: 일반 텍스트로 출력\n\n참고: 이름 변경에 성공한 파일에만 적용됩니다.'},
+  {type:'msg',title:'최종 확인',icon:'⚠️',buttons:[['예','y'],['아니오','n',1]],
+   text:'파일명 변경 실행 확인\n\n설정 요약:\n- 파일 경로: $A$2:$A$13 (12개)\n- 새 파일명: $B$2:$B$13\n- 결과 출력: $C$2:$C$13\n- 하이퍼링크: 적용\n\n경고: 실제 파일명이 변경되며 되돌릴 수 없습니다!\n\n지금 실행하시겠습니까?',
+   hint:'기본 선택이 [아니오]입니다. 실수로 엔터를 눌러도 실행되지 않게 한 안전장치입니다.',
+   check:v=>v==='y'?null:'연습이니 안심하고 [예]를 눌러 보세요. 이 창에서는 실제 파일이 바뀌지 않습니다.'},
+  {type:'act',run:async ctx=>{
+    await runRows(ctx.sheet,STU.map((s,i)=>['C'+(i+2),DIR+'2-3_'+s+'_현장체험학습동의서.txt']),
+      '파일명 변경 중...','파일명 변경 완료');
+  }},
+  {type:'msg',title:'작업 완료',icon:'✅',buttons:[['확인','ok',1]],
+   text:'파일명 변경 완료!\n\n작업 결과:\n[성공] 12개\n[실패] 0개\n[총처리] 12개\n\n참고: 새 파일 경로는 $C$2:$C$13 에서 확인하세요!',
+   hint:'C열에 새 경로가 들어왔습니다. 이 순간 폴더 안의 진짜 파일 이름도 함께 바뀐 것입니다.'},
+].concat(MAIL3(ctx))},
+ {label:'② 발송이 실패하면 어떻게 보이나',short:'② 실패 읽기',steps:ctx=>[
+  {type:'msg',title:'실패한 경우를 미리 봅니다',icon:'🧯',buttons:[['확인','ok',1]],
+   text:'실제로는 이런 일이 흔합니다.\n\n  · Gmail 인증 파일이 없거나 이름이 다르다\n  · 토큰이 만료됐다\n  · 아웃룩이 설치되어 있지 않다\n\n실패해도 경고 창이 따로 뜨지 않습니다.\n완료 창에 \'실패: 2건\' 처럼 숫자만 적히고,\n아이콘도 성공했을 때와 똑같습니다.\n\n무엇이 왜 실패했는지 알 수 있는 곳은 [발송 결과] 시트뿐입니다.\n\n실패가 섞인 결과를 만들어 볼 테니 읽는 법을 익혀 보세요.',
+   hint:'이 연습은 앞 단계를 하지 않아도 바로 볼 수 있습니다.'},
+  {type:'act',run:async ctx=>{
+    const sh=ctx.sheet;
+    const raw=sh.get('A3','MailSender');
+    const to=(raw&&String(raw).indexOf('여기에')<0)?raw:'hongkildong@gmail.com';
+    const H1='Gmail API 자격파일(client_secret.json)을 찾지 못했습니다.\n'
+      +"SETTINGS 시트의 'OAuthApiKeyFolder'(API 폴더)와 'GmailClientSecretFile'(파일명)을 확인하세요.\n"
+      +'- 폴더 경로 예: %APPDATA%\\All-in-one_document_assistant\\APIkey\n'
+      +'- 파일 존재 확인 및 철자 확인 후 다시 실행';
+    const rows=[
+     ['2026-08-25 19:01:10','Gmail',to,'김도윤','[한빛중 2-3] 김도윤 학생 현장 체험 학습 동의서 접수 확인',
+      'OK','',DIR+'2-3_김도윤_현장체험학습동의서.txt','','',
+      '19a2f0c3d4e5b670',''],
+     ['2026-08-25 19:01:13','Gmail',to,'박서연','[한빛중 2-3] 박서연 학생 현장 체험 학습 동의서 접수 확인',
+      'FAIL',H1,DIR+'2-3_박서연_현장체험학습동의서.txt','','','',''],
+     ['2026-08-25 19:01:16','daum',to,'이하준','[한빛중 2-3] 이하준 학생 현장 체험 학습 동의서 접수 확인',
+      'FAIL','',DIR+'2-3_이하준_현장체험학습동의서.txt','','','','']];
+    /* ③ 단계에서 '진짜 원인은 B열' 이라고 가르치므로,
+       MailSender 5행(이하준)의 서비스 칸도 실제로 daum 으로 만들어 둡니다 */
+    sh.set('K5','daum','MailSender');
+    const pm=sh.at('MailSender'); if(pm){pm.cls=pm.cls||{}; pm.cls['K5']='fail';}
+    addSendResult(sh,rows);
+    sh.setStatus('준비');
+    await new Promise(r=>setTimeout(r,500));
+  }},
+  {type:'msg',title:'① F열 상태부터 봅니다',icon:'🔎',buttons:[['확인','ok',1]],
+   text:c=>{const f=(c.sheet._resFrom||2), N='\n';
+     return 'F열에 OK 와 FAIL 만 적힙니다.'+N+N
+       +'  '+f+'행 김도윤  OK'+N+'  '+(f+1)+'행 박서연  FAIL'+N+'  '+(f+2)+'행 이하준  FAIL'+N+N
+       +'색은 칠해지지 않습니다. 눈으로 글자를 훑어야 합니다.'+N
+       +'OK 인 줄은 더 볼 것이 없습니다.';},
+   hint:'실패한 줄만 오른쪽 G열로 눈을 옮기면 됩니다. 줄이 많으면 F열에 필터를 걸어 FAIL 만 남기면 편합니다.'},
+  {type:'msg',title:'② G열 오류를 읽습니다',icon:'🧩',buttons:[['확인','ok',1]],
+   text:c=>((c.sheet._resFrom||2)+1)+'행(박서연)의 G열에는 이렇게 적혀 있습니다.\n\n  Gmail API 자격파일(client_secret.json)을 찾지 못했습니다.\n  SETTINGS 시트의 \'OAuthApiKeyFolder\'(API 폴더)와\n  \'GmailClientSecretFile\'(파일명)을 확인하세요.\n  - 폴더 경로 예: %APPDATA%\\All-in-one_document_assistant\\APIkey\n  - 파일 존재 확인 및 철자 확인 후 다시 실행\n\n무엇을 고쳐야 하는지까지 적어 줍니다. 그대로 따라 하면 됩니다.',
+   hint:'셀이 좁아 잘려 보이면 칸을 눌러 전체를 펼쳐 보세요.'},
+  {type:'msg',title:'③ 오류 칸이 비어 있을 때',icon:'⚠️',buttons:[['확인','ok',1]],
+   text:c=>((c.sheet._resFrom||2)+2)+'행(이하준)은 FAIL 인데 G열이 비어 있습니다.\n\n까닭 : 이 칸에는 미리 준비된 해설만 적힙니다.\n       해설이 준비되지 않은 오류는 빈칸으로 남습니다.\n\n이 줄의 진짜 원인은 B열에 있습니다.  서비스 = daum\n서비스 칸에는 Gmail / Naver / Outlook 세 가지만 적을 수 있습니다.\n\n오류 칸이 비어 있으면 그 줄의 B열(서비스)과\nE열(제목) · 첨부 경로를 되짚어 보세요.\n\n[MailSender] 시트 5행 서비스 칸(K열)을 열어 보시면\ndaum 이라고 적혀 있는 것을 직접 확인하실 수 있습니다.',
+   hint:'실무에서 가장 당황하는 지점입니다. 빈칸 = 원인 없음 이 아닙니다.'},
+  {type:'msg',title:'④ 맨 아래 초록 줄의 함정',icon:'🟩',buttons:[['확인','ok',1]],
+   text:'맨 아래에는 늘 이렇게 나옵니다.\n\n  메일 발송이 완료되었습니다. 성공: 1건 / 실패: 2건\n    - 자세한 내역은 위 표를 확인하세요.\n\n실패가 있어도 문구는 \'완료되었습니다\' 이고 색도 초록입니다.\n마지막에 뜨는 완료 창도 경고 아이콘이 아닙니다.\n\n그러니 초록 줄만 보고 안심하지 마시고\n반드시 \'실패: 0건\' 인지 숫자를 확인하세요.',
+   hint:c=>((c.sheet._resRuns||1)>1
+     ? '이 시트에는 지금까지 '+c.sheet._resRuns+'번 보낸 기록이 쌓여 있습니다. 초록 줄도 그만큼 있습니다. 방금 것은 맨 아래 초록 줄입니다.'
+     : '이 시트는 지워지지 않고 아래로 쌓입니다. 다시 실행하면 이 초록 줄 밑에 또 붙습니다.')},
+  {type:'msg',title:'⑤ 다시 보내기',icon:'🔁',buttons:[['확인','ok',1]],
+   text:'실패한 줄만 다시 보내려면\n\n  1. 원인을 고칩니다. (자격파일 경로, 서비스 이름 등)\n  2. MailSender 시트에서 성공한 줄의 이메일 칸을 비웁니다.\n     이메일이 빈 행은 발송 대상에서 자동으로 빠집니다.\n  3. [메일 자동 발송] 을 다시 실행합니다.\n\n이때 이메일 칸을 하나도 남기지 않으면\n\'유효한 발송 데이터가 없습니다.\' 라는 창이 뜨고 끝납니다.\n고장이 아니라 보낼 줄이 없다는 뜻입니다.\n\n같은 사람에게 같은 제목·본문을 두 번 적어 두면\n한 번만 나가므로 중복 발송 걱정은 없습니다.',
+   hint:c=>((c.sheet._resRuns||1)>1
+     ? '이 시트에는 지금까지 '+c.sheet._resRuns+'번 보낸 기록이 쌓여 있습니다. 가장 아래 묶음이 방금 것입니다.'
+     : '중복 판정 기준은 받는 사람·제목·본문·HTML여부·첨부1~3 입니다. 참조·숨은참조·서비스·이름만 다른 두 줄은 같은 것으로 보아 하나만 나갑니다.')}
+ ]},
+ {label:'③ 메일 부분만 다시 하기',short:'③ 메일만',steps:ctx=>[
+  {type:'msg',title:'메일 부분만 다시 해 봅니다',icon:'✉️',buttons:[['확인','ok',1]],
+   text:'앞의 파일 이름 바꾸기는 이미 끝난 것으로 하고\n메일 부분만 처음부터 다시 해 봅니다.\n\n  ① 리본 [메일 자동 발송] → [예]\n     … 서식만 갖추고 기능이 끝납니다\n  ② SETTINGS · MailSender 를 채웁니다\n  ③ 리본 [메일 자동 발송] → [아니오] → [예]\n     … 이때 비로소 메일이 나갑니다\n\n메뉴는 두 번 누릅니다.',
+   hint:'헷갈리는 부분만 골라 몇 번이고 다시 해 보세요. 앞 14번의 조작을 되풀이하지 않아도 됩니다.'},
+  {type:'act',run:async ctx=>{
+    const sh=ctx.sheet;
+    sh.show('1_파일 이름 한번에 바꾸기');
+    STU.forEach((nm,i)=>{const r=i+2;
+      sh.set('A'+r,DIR+'스캔_'+String(i+1).padStart(4,'0')+'.txt');
+      sh.set('C'+r,DIR+'2-3_'+nm+'_현장체험학습동의서.txt');
+      sh.cls['A'+r]='filled'; sh.cls['C'+r]='filled';});
+    sh.set('B3','user@gmail.com','SETTINGS');
+    const ps=sh.at('SETTINGS'); if(ps&&ps.cls)delete ps.cls['B3'];
+    const pm=sh.at('MailSender'); if(pm&&pm.cls){delete pm.cls['A3'];delete pm.cls['A4'];delete pm.cls['A5'];}
+    ['A3','A4','A5'].forEach(r=>sh.set(r,'여기에_내_이메일_주소@gmail.com','MailSender'));
+    sh.render(); sh.reveal();
+    sh.setStatus('준비 — 파일 이름 12개는 이미 바꾸어 두었습니다');
+    toast('파일 이름 바꾸기는 끝난 것으로 채워 두었습니다. 메일부터 시작합니다');
+    await new Promise(r=>setTimeout(r,1000));
+  }}
+ ].concat(MAIL3(ctx))}],
+ make:sheet3,
+ quiz:[
+  {q:'B열 새 이름에 "동의서.pdf" 라고 적으면 .txt 파일이 .pdf 가 되나요?',
+   a:['됩니다','안 됩니다. 확장자는 항상 원본이 유지됩니다','오류가 납니다'],c:1,
+   why:'확장자를 바꾸면 파일이 열리지 않게 되므로 원본 확장자를 강제로 유지합니다.',hint:'안내 창의 팁 문구를 떠올려 보세요.'},
+  {q:'같은 이름의 파일이 이미 있으면?',a:['덮어씁니다','덮어쓰지 않고 C열에 [오류] 대상 파일 이미 존재 라고 적습니다','건너뛰고 아무 표시도 없습니다'],c:1,
+   why:'덮어쓰기를 절대 하지 않는 안전장치가 있습니다.',hint:'2단계 마법사의 안내 창에서 덮어쓰기를 뭐라고 했는지 떠올려 보세요.'},
+  {q:'MailSender 시트에서 실제 수신자 데이터는 몇 행부터 적나요?',a:['1행','2행','3행'],c:2,
+   why:'1행은 제목, 2행은 회색 안내 줄, 데이터는 3행부터입니다.',hint:'회색 이탤릭 줄이 하나 있었습니다.'}]});
+
+/* ══════════ 미션 4 ══════════ */
+function sheet4(){
+  const c={A1:'번호',B1:'학생',C1:'학생 서술형 답안',E1:'결과 — 비워 두세요',G1:'▼ 공통 프롬프트(채점 기준)',
+   G2:'너는 중학교 2학년 사회과 서술형 평가 채점 교사다.\n아래 [채점 기준]에 따라 채점하고 피드백을 쓴다.\n\n# [채점 기준] (총 5점)\n- 핵심 개념어를 정확히 썼는가  2점\n- 개념의 의미를 자기 말로 설명했는가  2점\n- 사례나 결과를 들어 뒷받침했는가  1점\n\n# 출력 형식\n점수: (0~5)\n잘한 점: (한 문장)\n보완할 점: (한 문장)\n바른 답: (두 문장 이내)'};
+  for(let i=0;i<30;i++){const r=i+2;c['A'+r]=i+1;c['B'+r]='학생'+String(i+1).padStart(2,'0');
+    c['C'+r]='(서술형 답안 '+(i+1)+'번)'}
+  return new Sheet({name:'1_서술형 30명 채점',tabs:['① 시작 안내','1_서술형 30명 채점','2_비용 계산기','3_실시간 vs 절약 모드'],
+    cols:['A','B','C','D','E','F','G'],w:{A:40,B:60,C:224,D:20,E:200,F:20,G:240},n:31,cells:c});
+}
+M.push({n:4,title:'절약 모드 — 같은 일을 반값에',mins:'7분  (심화)',
+ lead:'급하지 않은 일을 몰아서 처리하는 대신 값을 정확히 절반만 받는 방식입니다. 대량 작업의 정답입니다.',
+ why:`<p>학생부 220명, 서술형 300장처럼 <b>오늘 밤에 걸어 두고 내일 아침에 받으면 되는</b> 일에 씁니다.</p>
+  <div class="scrollx"><table class="t"><tr><th style="width:130px"></th><th>실시간 (미션 1)</th><th>절약 모드</th></tr>
+  <tr><td>비용</td><td>정가 100%</td><td><b>정가의 50%</b></td></tr>
+  <tr><td>결과 나오는 때</td><td>1~5분</td><td>수 시간, 최대 24h(GPT)/48h(Gemini)</td></tr>
+  <tr><td>결과 적히는 곳</td><td>지금 이 시트</td><td><b>BatchResults 폴더의 새 엑셀 파일</b></td></tr>
+  <tr><td>엑셀을 닫으면</td><td>작업이 끊깁니다</td><td>닫아도 됩니다. 컴퓨터를 꺼도 됩니다</td></tr>
+  <tr><td>취소</td><td>시작 뒤 불가</td><td>취소 메뉴 자체가 없음</td></tr></table></div>
+  <div class="tip"><b>가장 좋은 습관</b> — 실시간으로 3행만 돌려 프롬프트를 확인한 뒤,
+    만족스러우면 전체를 절약 모드로 던집니다.</div>`,
+ cards:[
+  {h:'결과가 이 파일에 안 들어옵니다',p:'제출 순간의 시트를 사진 찍듯 복사해 두고, 그 사본에 결과를 적어 새 파일로 만듭니다.',fix:'C:\\MyTrustedFiles\\BatchResults 폴더에서 확인'},
+  {h:'제출 뒤 시트를 고쳐도 소용없습니다',p:'제출한 순간의 내용으로 처리됩니다.',fix:'제출 전에 내용을 최종 확인'},
+  {h:'취소 메뉴가 없습니다',p:'잘못 제출해도 그대로 처리되고 과금됩니다.',fix:'반드시 3행 실시간 시험 먼저'}],
+ cmd:'Gemini로 글과 파일, 이미지 행 단위 처리 - 절약 모드(Batch API, 50% 할인)',
+ cmds:{'Gemini로 글과 파일, 이미지 행 단위 처리 - 절약 모드(Batch API, 50% 할인)':0,'배치 처리 상태 확인 / 결과 받기':0},
+ steps:['[Gemini 실행] → […절약 모드(Batch API, 50% 할인)]','처리 유형 → [예] 글과 파일 처리',
+  '안내 확인 → [예]','프롬프트 → [예] → G2','데이터 범위 → C2:C31','추가 프롬프트 열 → 비움','결과 열 → E',
+  '제출 완료 → 엑셀 닫아도 됨','나중에 [배치 처리 상태 확인 / 결과 받기]'],
+ wiz:ctx=>[
+  {type:'msg',title:'Gemini 배치 처리 - 처리 유형',icon:'❓',
+   buttons:[['예','y',1],['아니오','n'],['취소','c']],
+   text:'무엇을 배치(절약) 모드로 처리할까요?\n\n[예] 글과 파일 처리\n     텍스트 결과를 결과 열에 기록합니다.\n[아니오] 이미지 생성\n     행마다 그림 1장을 만들고, 결과 열에는\n     저장된 이미지 파일 경로를 기록합니다.\n[취소] 작업 중단',
+   check:v=>v==='y'?null:(v==='n'?'이번엔 채점(글) 작업입니다. [예]를 고르세요.':'[예]로 진행해 보세요.')},
+  {type:'msg',title:'Gemini 배치 처리(절약 모드)',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'Gemini Batch API 절약 모드로 처리합니다.\n\n- 비용: 표준 대비 50% 할인\n- 처리 시간: 보통 수 시간, 최대 48시간\n- 제출 후 Excel을 계속 사용하거나 종료해도 됩니다.\n- 결과는 별도 엑셀 파일로 생성됩니다:\n  C:\\MyTrustedFiles\\BatchResults\n\n- 사용 모델: gemini-3.7-flash\n\n계속하시겠습니까?',
+   hint:'여기 적힌 두 가지가 핵심입니다 — 최대 48시간, 결과는 별도 파일.',
+   check:v=>v==='y'?null:'[예]로 진행합니다.'},
+  {type:'msg',title:'Gemini 배치 처리 - 프롬프트 가져오기',icon:'❓',
+   buttons:[['예','y',1],['아니오','n'],['취소','c']],
+   text:'프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 직접 \'셀 범위 선택\'으로 진행\n[아니오] \'프롬프트 관리 폼\'에서 선택\n[취소] 작업 중단',
+   check:v=>v==='y'?null:'채점 기준이 G2 칸에 있습니다. [예]를 고르세요.'},
+  {type:'pick',title:'Gemini 배치 처리 - 프롬프트 범위 선택',want:'G2',
+   text:'프롬프트 내용이 들어있는 셀 범위를 선택하세요:',
+   hint:'채점 기준이 담긴 G2 를 클릭.',
+   check:v=>v==='G2'?null:'채점 기준은 G2 에 있습니다.'},
+  {type:'pick',title:'Gemini 배치 처리 - 데이터 범위',want:'C2:C31',
+   text:'처리할 데이터 범위를 선택하세요.\n(행 단위로 처리됩니다. 파일 경로 셀은 파일로, 그 외 셀은 텍스트로 전달)',
+   hint:'답안 30개 — C2 에서 C31 까지 드래그하세요.',
+   check:v=>v==='C2:C31'?null:'답안은 C2:C31 (30행) 입니다. (지금 고른 것: '+v+')'},
+  {type:'input',title:'Gemini 배치 처리 - 추가 프롬프트 열',def:'',
+   text:'행별 추가 프롬프트가 있는 열 문자를 입력하세요.\n(예: C)  없으면 비워 두고 확인을 누르세요.',
+   hint:'이번에는 학생마다 다른 부탁이 없습니다. 비워 두고 [확인].',
+   check:v=>v.trim()===''?null:'이번 실습에는 행별 추가 프롬프트가 없습니다. 비워 두고 [확인]을 눌러 보세요.'},
+  {type:'input',title:'Gemini 배치 처리 - 결과 열',def:'',
+   text:'결과를 기록할 열 문자를 입력하세요. (예: E)\n\n결과는 원본이 아니라, 제출 시점의 시트\n사본으로 만든 결과 엑셀 파일에 기록됩니다.',
+   hint:'이 문구가 핵심입니다 — 결과는 이 파일이 아니라 사본에 들어갑니다.',
+   check:v=>v.trim().toUpperCase()==='E'?null:'E 를 입력하세요.'},
+  {type:'act',run:async ctx=>{
+    ctx.sheet.setStatus('Gemini 배치처리 - 요청 파일 생성');
+    await new Promise(r=>setTimeout(r,900));
+    ctx.sheet.setStatus('Gemini 배치처리 - 제출 완료');
+    await msgbox({title:'Gemini 배치 처리(절약 모드)',icon:'📤',buttons:[['확인','ok',1]],
+      text:'Gemini 배치 작업을 제출했습니다.\n\n작업 ID: 20260825_143012_gemini_qkzm\n처리 행 수: 30행\n\n- 업로드와 처리는 백그라운드에서 진행됩니다.\n- Excel을 계속 사용하거나 종료해도 됩니다.\n- 진행 상황: [배치 상태 확인] 메뉴 또는 아래 로그\n  C:\\MyTrustedFiles\\BatchJobs\\20260825_143012_gemini_qkzm\\job.log\n- 완료 시 결과 파일 위치:\n  C:\\MyTrustedFiles\\BatchResults',
+      hint:'여기서 엑셀을 닫아도 됩니다. 이제 상태 확인을 해 봅시다.'});
+  }},
+  {type:'msg',title:'배치 상태 확인',icon:'⏳',buttons:[['확인','ok',1]],
+   text:'진행 중 1건 / 완료 0건 / 실패·만료 0건\n----------------------------------------------\n[처리 중(8/30)] 20260825_143012_gemini_qkzm  (30행, Gemini)\n\n결과 폴더: C:\\MyTrustedFiles\\BatchResults\n누적 0 MB\n디스크 여유: 250 GB',
+   hint:'아직 도는 중입니다. 실제로는 몇 시간 뒤 다시 누릅니다. (연습창은 바로 넘어갑니다)'},
+  {type:'msg',title:'배치 상태 확인',icon:'✅',buttons:[['예','y',1],['아니오','n']],
+   text:'진행 중 0건 / 완료 1건 / 실패·만료 0건\n----------------------------------------------\n[완료] 20260825_143012_gemini_qkzm  (30행, Gemini)\n\n결과 폴더: C:\\MyTrustedFiles\\BatchResults\n누적 42 KB (결과 42 KB)\n디스크 여유: 250 GB\n\n결과 폴더를 지금 여시겠습니까?',
+   hint:'[예]를 누르면 탐색기가 열립니다.'},
+  {type:'act',run:async ctx=>{
+    ctx.sheet.setStatus('완료 — 결과는 BatchResults 폴더의 새 파일에 있습니다');
+    await msgbox({title:'C:\\MyTrustedFiles\\BatchResults',icon:'📁',buttons:[['확인','ok',1]],
+      text:'📄 1_서술형 30명 채점_배치결과_20260825_190455_qkzm.xlsx\n\n이 파일을 열면\n  · 제출 시점의 시트 사본 (E열에 채점 결과 30개)\n  · [배치처리요약] 시트 (성공/실패, 토큰, 비용)\n두 장이 들어 있습니다.\n\n원본 통합문서는 전혀 건드리지 않았습니다.',
+      hint:'이것이 절약 모드에서 가장 많이 놀라는 지점입니다. 결과는 새 파일로 나옵니다.'});
+  }}],
+ make:sheet4,
+ quiz:[
+  {q:'절약 모드 결과는 어디에서 보나요?',a:['제출한 원본 시트의 결과 열','C:\\MyTrustedFiles\\BatchResults 폴더의 새 엑셀 파일','이메일로 옵니다'],c:1,
+   why:'제출 시점 시트 사본에 결과를 적어 새 파일로 만듭니다. 원본은 건드리지 않습니다.',hint:'결과 열 입력창의 문구를 다시 떠올려 보세요.'},
+  {q:'오늘 오후 4시 회의 자료를 절약 모드로 돌려도 될까요?',a:['됩니다. 보통 5분이면 끝납니다','안 됩니다. 최대 24~48시간이 걸릴 수 있습니다',
+      '값이 절반이니 급한 일도 절약 모드가 낫습니다'],c:1,
+   why:'급한 일은 실시간(미션 1), 급하지 않은 대량 작업은 절약 모드입니다.',hint:'안내 창에 적힌 처리 시간을 보세요.'},
+  {q:'잘못 제출한 배치를 취소하려면?',a:['[배치 처리 상태 확인]에서 취소 버튼','취소 메뉴가 없습니다','엑셀을 끄면 취소됩니다'],c:1,
+   why:'그래서 제출 전에 실시간으로 3행만 시험해 보는 습관이 중요합니다.',hint:'가장 조심해야 할 점이었습니다.'}]});
+</script>
+<script>
+/* ══════════ 미션 5 ══════════ */
+const TYPES5=['대화/토론형 (Dialogue/Debate): 갑, 을, 병(또는 교사와 학생)이 특정 주제에 대해 의견을 나누는 형태',
+'일기/기행문/편지형 (Diary/Journal): 특정 지역을 여행하거나 특정 사건을 겪은 후 작성한 개인의 기록 형태',
+'신문 기사/뉴스 보도형 (News Report): 실제 있을 법한 사회적 이슈나 법적 사건을 객관적인 기사 톤으로 제시하는 형태',
+'사례/스토리 제시형 (Case Study): 일상생활에서 벌어지는 구체적인 사건이나 갈등 상황을 짧은 이야기로 제시하는 형태',
+'가상 인터뷰/강연형 (Interview/Speech): 전문가, 역사적 인물 등과의 인터뷰나 연설문 발췌본을 제시하는 형태',
+'SNS 게시물/댓글형 (Social Media): 게시물과 그 아래 달린 찬반 댓글을 분석하는 형태',
+'메신저 대화형 (Chat/Messenger): 카카오톡 같은 모바일 메신저 창에서 대화하는 화면을 묘사하는 형태',
+'온라인 커뮤니티/Q&A 게시판형 (Forum): 게시판에 질문을 올리고 답변이 달린 형태',
+'시각 자료를 사용하며, 마크다운 표나 이미지 생성 프롬프트가 필요한 형태',
+'지도 분석형 (Map): 지도를 제시하고 A, B, C 지역의 특징을 묻는 형태',
+'통계 표/그래프형 (Table/Chart): 그래프를 제시하고 수치를 해석하는 형태',
+'모식도/개념도형 (Diagram): 화살표와 박스로 나타낸 다이어그램 형태',
+'만화/삽화형 (Cartoon): 풍자 만화나 두 컷짜리 상황 만화를 글로 묘사하여 제시하는 형태',
+'<보기> 나열형: 글상자 안에 ㄱ, ㄴ, ㄷ, ㄹ 4개의 명제를 나열하고 맞는 것끼리 짝지은 것을 고르는 형태',
+'빈칸 추론형 (A, B / 가, 나): 핵심 개념어 자리를 뚫어놓고 들어갈 알맞은 말을 묻는 형태',
+'마인드맵/마름모 분류형: 예/아니오 질문을 따라가며 최종 도착지에 해당하는 개념을 찾는 형태',
+'부정형 발문 문제','개념 설명형 문제'];
+const IT5=[['경제 성장으로 달라진 생활 모습','긍정형',6,4,'중','③'],
+['국내 총생산의 의미','일반형',17,3.3,'하','②'],['국내 총생산의 한계','일반형',13,4,'중','①'],
+['물가 상승이 생활에 미치는 영향','부정형',3,4,'중','④'],['물가 지수 120의 의미','일반형',17,3.3,'하','⑤'],
+['물가 상승으로 불리해지는 사람','일반형',13,4,'중','④'],['물가 안정을 위한 정부의 대책','일반형',0,4.3,'상','②'],
+['실업의 종류와 사례','긍정형',3,4,'중','③'],['실업률 계산과 해석','일반형',10,4.3,'상','①'],
+['고용 안정을 위한 노력','일반형',2,3.3,'하','⑤'],['국제 거래가 필요한 까닭','일반형',4,3.3,'하','②'],
+['환율 변동이 미치는 영향','부정형',10,4.3,'상','④'],['우리나라 무역 구조의 특징','일반형',9,4,'중','③'],
+['세계화에 따른 경제 생활 변화','긍정형',7,4,'중','⑤'],['자유 무역과 보호 무역','일반형',11,4,'중','①']];
+const addP=it=>`[내용영역]은 ${it[0]}에 관한 것, [발문 유형]은 ${it[1]}, [문항 유형]은 '${TYPES5[it[2]]}'를 적용하여 [난이도] ${it[4]} 수준의 문제를 만들어줘. [정답]은 ${it[5]}번이 되도록 구성해줘. 발문 맨 끝에 소괄호로 ${it[3]}점을 표기해줘.`;
+const Q5=['다음 대화에 나타난 현상에 대한 설명으로 가장 적절한 것은?','밑줄 친 ㉠에 대한 설명으로 옳은 것은?',
+'국내 총생산의 한계로 옳은 것만을 <보기>에서 있는 대로 고른 것은?','다음 기사에 나타난 현상의 영향으로 옳지 않은 것은?',
+'다음 자료에 대한 설명으로 가장 적절한 것은?','물가 상승 시 불리해지는 사람만을 <보기>에서 고른 것은?',
+'다음 토론에서 옳은 주장을 한 학생은?','다음 사례에 나타난 실업의 유형으로 옳은 것은?',
+'다음 지표에 대한 해석으로 옳은 것은?','일기에 나타난 정책의 목적으로 가장 적절한 것은?',
+'다음 사례를 통해 알 수 있는 국제 거래의 까닭은?','환율 상승의 영향으로 옳지 않은 것은?',
+'다음 그래프에 대한 설명으로 옳은 것은?','다음 대화에 나타난 변화로 가장 적절한 것은?',
+'다음 그래프의 A, B 정책에 대한 설명으로 옳은 것은?'];
+const IMGP=[null,null,null,null,'물가 지수 꺾은선 그래프(2024=100, 2026=120)',null,null,null,
+'실업률 산출 도식(생산가능인구 → 경제활동인구 → 실업자)',null,null,'환율과 수출입 관계 모식도',
+'우리나라 국가별 무역 비율 막대그래프',null,'자유무역·보호무역 비교 도표'];
+const R5=IT5.map((it,i)=>`## [그림 생성 프롬프트]\n${IMGP[i]?'> Prompt: 시험 출제용 흑백 라인 아트. '+IMGP[i]:'없음'}\n\n## [문항 구성]\n\n**질문:** ${Q5[i]} (${it[3]}점)\n\n**[자료]:** ${TYPES5[it[2]].split(':')[0]} 형태로 재구성한 자료\n\n**선택지:** ① … ② … ③ … ④ … ⑤ …  (글자 수 오름차순)\n\n**정답:** ${it[5]}\n\n**설명:**\n- [정답 풀이] …\n- [오답 풀이] …`);
+
+function sheet5(){
+  const c={A1:'번호',B1:'주제',C1:'교과 자료 경로(PDF)',D1:'참고 이미지1',E1:'참고 이미지2',
+    F1:'추가 프롬프트 (1번 시트에서 옴)',G1:'문항 — 비워 두세요',H1:'그림 경로'};
+  IT5.forEach((it,i)=>{const r=i+2;c['A'+r]=i+1;c['B'+r]=it[0];c['F'+r]=addP(it)});
+  return new Sheet({name:'2_문항 만들기',
+    tabs:['① 시작 안내','1_추가프롬프트 만들기','문항 형태 (골라 쓰세요)','2_문항 만들기',
+      '3_한글 파일로 보내기','예시 결과 (완성된 문항)'],
+    cols:['A','B','C','D','E','F','G','H'],
+    w:{A:40,B:110,C:92,D:68,E:68,F:198,G:180,H:148},n:16,cells:c});
+}
+const PB_HTML=`<div class="card"><h3>내 프롬프트 만들기 도구</h3>
+ <p style="font-size:13.5px;margin:0 0 6px">아래 칸을 고르면 <b>추가 프롬프트 문장</b>이 저절로 완성됩니다.
+   실습 엑셀 파일 <code>[1_추가프롬프트 만들기]</code> 시트 H열 수식과 똑같은 원리입니다.</p>
+ <div class="pb"><div>
+  <label>[내용영역] — 무엇에 대한 문제인가</label><input id="pb_a" value="경제 성장으로 달라진 생활 모습">
+  <label>[발문 유형]</label><select id="pb_b"><option>긍정형</option><option>부정형</option><option>일반형</option></select>
+  <label>[문항 유형]</label><select id="pb_c"></select>
+  <label>[난이도]</label><select id="pb_d"><option>상</option><option selected>중</option><option>하</option></select>
+  <div style="display:flex;gap:10px">
+   <div style="flex:1"><label>[점수]</label><input id="pb_e" value="4"></div>
+   <div style="flex:1"><label>[정답]</label><select id="pb_f"><option>①</option><option>②</option><option selected>③</option><option>④</option><option>⑤</option></select></div>
+  </div></div>
+  <div><label>완성된 추가 프롬프트 — 그대로 복사해 쓰세요</label>
+   <div class="pbout" id="pb_out"></div>
+   <button class="btn ghost" style="margin-top:9px;padding:6px 13px;font-size:13px" onclick="pbCopy()">복사하기</button>
+   <div class="pbf" id="pb_f2"></div></div>
+ </div></div>`;
+function pbInit(){
+  const c=document.getElementById('pb_c'); if(!c)return;
+  c.innerHTML=TYPES5.map((t,i)=>`<option value="${i}"${i===6?' selected':''}>${esc(t.split(':')[0])}</option>`).join('');
+  ['pb_a','pb_b','pb_c','pb_d','pb_e','pb_f'].forEach(id=>{
+    const e=document.getElementById(id); e.oninput=pbDraw; e.onchange=pbDraw});
+  pbDraw();
+}
+function pbDraw(){
+  const g=id=>document.getElementById(id).value;
+  const t=TYPES5[+g('pb_c')];
+  document.getElementById('pb_out').textContent=
+    `[내용영역]은 ${g('pb_a')}에 관한 것, [발문 유형]은 ${g('pb_b')}, [문항 유형]은 '${t}'를 적용하여 [난이도] ${g('pb_d')} 수준의 문제를 만들어줘. [정답]은 ${g('pb_f')}번이 되도록 구성해줘. 발문 맨 끝에 소괄호로 ${g('pb_e')}점을 표기해줘.`;
+  document.getElementById('pb_f2').textContent=
+    '엑셀 수식 :  =$B$1&"은 "&B2&"에 관한 것, "&$C$1&"은 "&C2&", "&$D$1&"은 "&"\'"&D2&"\'를 적용하여 "&$F$1&" "&F2&" 수준의 문제를 만들어줘. "&$G$1&"은 "&G2&"번이 되도록 구성해줘. 발문 맨 끝에 소괄호로 "&E2&"점을 표기해줘."';
+}
+function pbCopy(){
+  const t=document.getElementById('pb_out').textContent;
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('복사했습니다'),()=>toast('복사에 실패했습니다'));
+  else toast('브라우저가 복사를 막았습니다. 글자를 직접 선택해 주세요');
+}
+M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험지·정답지·삽화까지',mins:'18분  ★ 핵심 (③ 삽화는 심화)',
+ lead:'이원목적분류표만 채우면 문항 15개, 한글 시험지, 삽화까지 나옵니다. 이 실습의 심장입니다.',
+ why:`<p><b>전체 흐름</b></p><ol class="steps">
+  <li>이원목적분류표를 적는다 → 추가 프롬프트 15개가 <b>수식으로</b> 저절로 완성</li>
+  <li>행 단위 병렬 처리 한 번 → 문항 15개가 한꺼번에</li>
+  <li>한글 파일 만들기 → 문제만 뽑아 시험지 / 정답과 풀이만 뽑아 정답지</li>
+  <li>이미지 행 단위 병렬 생성 → 그림이 필요한 문항의 삽화</li></ol>
+  <div class="note"><b>왜 이렇게 잘 나오나요</b><br>
+   <b>공통 프롬프트</b>가 '5지 선다형을 어떻게 만들 것인가'라는 규칙(발문 어투, 선택지 길이 순서,
+   보기 조합형 배열, 출력 형식)을 담고, <b>추가 프롬프트</b>가 '이번 문항은 무엇에 대해 · 어떤 형태로 ·
+   몇 점짜리 · 정답 몇 번'인지를 알려 줍니다. 규칙은 한 번만 쓰고 조건만 행마다 바꾸는 구조입니다.</div>
+  <div class="tip">공통 프롬프트 <code>문제 제작_5지 선다형_추가프롬프트</code> 는
+   추가기능에 <b>처음부터 들어 있습니다.</b> 새로 만들 필요 없이 [프롬프트 관리] 목록에서 고르면 됩니다.</div>`,
+ extra:PB_HTML, onShow:pbInit,
+ cards:[
+  {h:'H열 수식을 손으로 덮어씀',p:'문장을 직접 고치면 수식이 지워져 다음부터 자동 완성이 안 됩니다.',fix:'고칠 땐 B~G 칸만'},
+  {h:'정답 번호가 한쪽으로 쏠림',p:'정답이 ③에 몰리면 학생이 찍어서 맞힙니다.',fix:'실습 파일 오른쪽 정답 분포표 확인'},
+  {h:'삽화를 15장 전부 생성',p:'1K 한 장 약 $0.067. 필요 없는 문항까지 돌리면 낭비입니다.',fix:'그림 프롬프트가 있는 행만 골라서'}],
+ cmd:'Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리',
+ cmds:{'Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리':0,'한글 파일 만들기':1,'Gemini로 이미지 행 단위 병렬 생성(Nano Banana)':2},
+ steps:['[1_추가프롬프트 만들기] 시트에서 표만 채운다 (H열은 수식)',
+  '[Gemini 실행] → 행 단위 병렬 처리 → 프롬프트는 [프롬프트 관리 폼]에서 [문제 제작_5지 선다형_추가프롬프트]',
+  '데이터 범위 B2:B16 / 추가 프롬프트 열 F / 결과 열 G',
+  '[일반 기능] → [한글 파일 만들기] → 분할 문구 ## [문항 구성],**정답:** (기준 두 개)',
+  '[Gemini 실행] → [Gemini로 이미지 행 단위 병렬 생성(Nano Banana)]'],
+ runs:[
+ {label:'① 문항 15개 만들기',steps:ctx=>[
+  {type:'input',title:'동시 실행 수 설정',def:'10',
+   text:'동시에 몇 개 행을 처리할까요?\n\n[gemini-3.7-flash - API 키 등급별 추천]\n  무료 키(결제 미연결)   8\n  Tier 1(결제 연결)   20\n  Tier 2/3(누적 $100/$1,000+)   30\n\n입력 범위: 1~30',
+   hint:'문항 생성은 답이 길어 조금 낮추는 편이 안전합니다. 5 를 넣어 보세요.', store:'workers',
+   check:v=>{const n=+v;if(!(n>=1&&n<=30))return '1~30 사이 숫자를 넣으세요.';
+     return n<=8?null:'문항 생성은 출력이 깁니다. 5 정도로 낮춰 보세요. (8 이하 권장)'}},
+  {type:'msg',title:'URL 확장 모드',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'셀 텍스트에 포함된 URL의 실제 콘텐츠를\n가져와 분석에 포함할까요?\n\n[아니오]  URL을 텍스트 문자열로만 취급',
+   check:v=>v==='n'?null:'이 자료에는 URL이 없습니다. [아니오].'},
+  {type:'msg',title:'병렬 처리 설정 확인',icon:'ℹ️',buttons:[['확인','ok',1]],
+   text:c=>'[설정 요약]\n모델: gemini-3.7-flash (Temperature 미사용)\n행별 개별 처리(배치 1 고정) · 동시 실행: '+(c.workers||5)+'개\n  기본 모드 - 고속 모델(3.7-flash) 일반 작업\nThinking Level: high (thinkingConfig 적용)\n\n[URL 확장 모드]\n  [미사용] - URL은 텍스트 문자열로만 처리'},
+  {type:'msg',title:'프롬프트 가져오기 방식 선택',icon:'❓',
+   buttons:[['예','y'],['아니오','n',1],['취소','c']],
+   text:'프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 직접 \'셀 범위 선택\'으로 진행\n[아니오] \'프롬프트 관리 폼\'에서 선택\n[취소] 작업 중단',
+   hint:'이번에는 이미 들어 있는 프롬프트를 씁니다. [아니오]를 고르세요.',
+   check:v=>v==='n'?null:'출제 프롬프트가 추가기능에 이미 들어 있습니다. [아니오]로 프롬프트 관리 폼을 열어 보세요.'},
+  {type:'form',pre:'문제 제작_5지 선다형_추가프롬프트',decoy:'문제 제작_5지 선다형_전과목',
+   hint:'목록에서 [문제 제작_5지 선다형_추가프롬프트] 를 고르고 [Prompt 사용하기] 를 누르세요. 왼쪽 아래 상자에서 내용을 읽어 볼 수 있습니다.',
+   check:v=>v==='문제 제작_5지 선다형_추가프롬프트'?null:'5지 선다형 문항을 만들 것이므로 [문제 제작_5지 선다형_추가프롬프트] 를 고르세요. (지금 고른 것: '+v+')'},
+  {type:'pick',title:'데이터 범위 선택',want:'B2:B16',
+   text:'파일 경로 또는 텍스트가 들어 있는\n셀 범위를 선택하세요.\n(PDF / 이미지 / 음성 / 텍스트 파일 지원)',
+   hint:'주제가 있는 B2 부터 B16 까지 드래그. (교과서 PDF를 쓸 때는 B2:E16 처럼 경로 열까지 함께 잡습니다)',
+   check:v=>v==='B2:B16'?null:'주제는 B2:B16 (15행) 입니다. (지금 고른 것: '+v+')'},
+  {type:'input',title:'추가 프롬프트 열',def:'',
+   text:'추가로 사용할 \'행별 프롬프트\' 열 문자를\n입력하세요. (예: B)\n사용하지 않으면 빈 칸으로 두고 [확인]',
+   hint:'분류표에서 만들어진 문장이 F열에 있습니다.',
+   check:v=>v.trim().toUpperCase()==='F'?null:'추가 프롬프트는 F열입니다. F 를 입력하세요.'},
+  {type:'input',title:'결과 저장 열',def:'',
+   text:'결과를 기록할 열의 문자를 입력하세요 (예: K):',
+   check:v=>{const u=v.trim().toUpperCase();
+     if(u==='F')return 'F열에는 추가 프롬프트가 있습니다. 빈 열 G 를 쓰세요.';
+     return u==='G'?null:'G 를 입력하세요.'}},
+  {type:'act',run:async ctx=>{
+    await runRows(ctx.sheet,R5.map((v,i)=>['G'+(i+2),v]),
+      'Gemini 병렬처리 - 파이썬 병렬 처리 실행 중 (시간이 걸릴 수 있습니다)...','문항 15개 생성 완료');
+    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],
+      text:'병렬 처리 완료!\n\n총 행 수: 15  ·  성공 15 / 실패 0\n모델: gemini-3.7-flash\n토큰: 입력 18,240 / 출력 22,860\n예상 비용(USD): $0.099420',
+      hint:'연습창은 문항을 줄여 보여 줍니다. 실제로는 자료·선택지·풀이가 모두 한 칸에 들어옵니다.'});
+  }}]},
+ {label:'② 한글 시험지 만들기',steps:ctx=>[
+  {type:'pick',title:'한글 파일 생성 범위 선택',want:'G2:G16',
+   text:'한글 파일로 보낼 엑셀 범위를 한 열 안에서 마우스로 선택한 뒤 [확인]을 누르세요.\n예: H2:H30처럼 한 열의 연속된 행 범위만 선택하세요.',
+   hint:'문항이 들어 있는 G2:G16 을 드래그. 반드시 한 열만 됩니다.',
+   check:v=>v==='G2:G16'?null:'문항은 G2:G16 에 있습니다. 한 열만 고를 수 있습니다. (지금 고른 것: '+v+')'},
+  {type:'input',title:'분할 문구 입력',def:'#전체를 보냄',
+   text:'한글 파일에 반영할 기준 문구를 쉼표(,)로 구분하여 입력하세요.\n\n예1) #전체를 보냄  - 셀 전체를 그대로 보냅니다\n예2) 질문:  - 그 말 뒤부터 셀 끝까지 보냅니다\n예3) 질문:,정답:  - 첫 말 뒤부터 두 번째 말 앞까지만 보냅니다\n\n기준을 하나만 적으면 그 뒤 내용이 끝까지 따라갑니다.',
+   hint:'학생용 시험지이므로 정답 앞에서 끊어야 합니다.  ## [문항 구성],**정답:**  두 개를 쉼표로 적으세요.',
+   check:v=>{const t=v.trim().replace(/\s+/g,' ');
+     if(t==='#전체를 보냄')return '전체를 보내면 그림 프롬프트와 정답·풀이까지 시험지에 들어갑니다.';
+     if(t==='## [문항 구성]')return '기준이 하나뿐이면 그 뒤 셀 끝까지 전부 나갑니다. 즉 정답과 풀이가 학생용 시험지에 그대로 인쇄됩니다. 끊을 지점 **정답:** 을 쉼표로 덧붙이세요.';
+     return t==='## [문항 구성],**정답:**'?null:'## [문항 구성],**정답:**  을 그대로 입력해 보세요.'}},
+  {type:'msg',title:'기준 문구 포함 여부',icon:'❓',buttons:[['예','y'],['아니오','n',1],['취소','c']],
+   text:'한글 파일에 기준 문구 자체도 함께 반영하시겠습니까?',
+   hint:'"## [문항 구성]" 이라는 글자는 시험지에 필요 없습니다. [아니오].',
+   check:v=>v==='n'?null:'기준 문구 글자까지 시험지에 찍히면 지저분합니다. [아니오]를 고르세요.'},
+  {type:'msg',title:'연번 적용',icon:'❓',buttons:[['예','y',1],['아니오','n'],['취소','c']],
+   text:'한글 파일로 보낼 각 행 앞에 숫자 연번을 적용하시겠습니까?\n예: 1. 첫 번째 행 내용',
+   hint:'1. 2. 3. … 문항 번호가 자동으로 붙습니다. [예].'},
+  {type:'msg',title:'한글 파일을 저장할 폴더를 선택하세요',icon:'📁',buttons:[['확인','ok',1]],
+   text:'선택한 폴더:\nD:\\2026_평가\\2학기 기말\\'},
+  {type:'input',title:'한글 파일명 입력',def:'한글_파일_20260825_190455',
+   text:'생성할 한글 파일명을 입력하세요.\n확장자를 생략하면 .hwp로 저장합니다.',
+   hint:'예)  2026_2학기_2학년사회_기말고사   ← 알아보기 쉬운 이름으로 바꿔 보세요.',
+   check:v=>v.trim()?null:'파일명이 비어 있어 작업을 취소합니다.'},
+  {type:'act',run:async ctx=>{
+    ctx.sheet.setStatus('한글 파일 생성 중...');
+    await new Promise(r=>setTimeout(r,1400));
+    ctx.sheet.setStatus('한글 파일 생성 완료');
+    await msgbox({title:'한글 파일 만들기',icon:'✅',buttons:[['확인','ok',1]],
+      text:'한글 파일 생성이 완료되었습니다.\n\n처리 건수: 15\n저장 위치: D:\\2026_평가\\2학기 기말\\2026_2학기_2학년사회_기말고사.hwp',
+      hint:'교사용 정답지는 같은 순서를 한 번 더 — 분할 문구에 **정답:** 하나만 적고, 기준 문구 포함 여부를 [예] 로 하면 정답과 풀이만 모인 파일이 나옵니다.'});
+  }}]},
+ {label:'③ 삽화 만들기',steps:ctx=>[
+  {type:'input',title:'[설정 0/8] 모델 선택',def:'1',
+   text:'이미지 생성 모델을 선택하세요:\n\n1: 기본 권장 (gemini-3.1-flash-image) [권장]\n   - 1K: $0.067, 2K: $0.101, 4K: $0.151/이미지\n\n2: 고품질 전문 (gemini-3-pro-image-preview)\n   - 1K: $0.134, 2K: $0.134, 4K: $0.24/이미지',
+   check:v=>['1','2'].includes(v.trim())?null:'1 또는 2 를 넣으세요.'},
+  {type:'input',title:'[설정 1/8] 해상도 선택',def:'1',
+   text:'이미지 해상도를 선택하세요\n(gemini-3.1-flash-image):\n1: 1K (1024px, 기본, $0.067/이미지)\n2: 2K (2048px, 고품질, $0.101/이미지)\n3: 4K (4096px, 최고품질, $0.151/이미지)',
+   hint:'시험지 삽화는 1K로 충분합니다.',
+   check:v=>v.trim()==='1'?null:'시험지 인쇄에는 1K로 충분합니다. 1 을 고르세요.'},
+  {type:'input',title:'[설정 2/8] API 티어 선택',def:'1',
+   text:'Gemini API 티어를 선택하세요 (Rate Limit 관리용):\n\n※ 기본 권장 모델 (gemini-3.1-flash-image)\n\n1 = 유료 1등급 (20 images/min, 동시 3개)\n2 = 유료 2등급 (60 images/min, 동시 15개)\n* 잘 모르시면 1을 선택하세요 (가장 안전)',
+   check:v=>['1','2'].includes(v.trim())?null:'1 또는 2 를 넣으세요.'},
+  {type:'input',title:'[설정 3/8] 비율 선택',def:'1',
+   text:'이미지 비율을 선택하세요:\n\n1: 1:1 (정사각형, 기본)\n2: 16:9 (가로 와이드)\n3: 9:16 (세로 모바일)\n4: 4:3 (가로 클래식)\n5: 3:4 (세로 클래식)\n6: 21:9 (초광각)',
+   check:v=>['1','2','3','4','5','6'].includes(v.trim())?null:'1~6 중에서 고르세요.'},
+  {type:'msg',title:'[설정 4/8] 기본 프롬프트 설정',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'기본 프롬프트를 사용하시겠습니까?\n\n예: 기본 프롬프트를 셀 범위 또는 프롬프트 입력창에서 가져옵니다\n아니오: 각 행 데이터만 사용합니다 (기본 프롬프트 없음)',
+   check:v=>v==='y'?null:'"흑백 라인 아트로" 같은 공통 지시가 있어야 시험지에 어울리는 그림이 나옵니다. [예].'},
+  {type:'msg',title:'[설정 4/8] 기본 프롬프트 가져오기',icon:'❓',
+   buttons:[['예','y'],['아니오','n',1],['취소','c']],
+   text:'기본 프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 셀 범위 선택\n[아니오] 프롬프트 입력창에서 선택\n[취소] 기본 프롬프트 없이 진행',
+   check:v=>v==='n'?null:'이미 들어 있는 프롬프트를 씁니다. [아니오].'},
+  {type:'form',pre:'문제 제작_문제로 이미지 만들기',decoy:'그림책만들기',
+   hint:'[문제 제작_문제로 이미지 만들기] 를 고르세요. 문항 안의 ## [그림 생성 프롬프트] 를 읽어 그림을 그려 줍니다.',
+   check:v=>v==='문제 제작_문제로 이미지 만들기'?null:'[문제 제작_문제로 이미지 만들기] 를 고르세요.'},
+  {type:'pick',title:'[설정 5/8] 이미지 프롬프트 범위 설정',want:'G6:G16 처럼 필요한 구간',
+   text:'각 행별 이미지 프롬프트가 있는 범위를 선택하세요:\n[단일 행 예시] Q53 (Q열 53행만)\n[여러 행 예시] Q53:Q55 (Q열의 53~55행, 3개 이미지 생성)\n[여러 열 예시] Q53:R53 (Q~R열의 53행 - 프롬프트 결합)\n※ 각 행마다 순회하며 이미지를 생성합니다.',
+   hint:'G열 안에서 원하는 구간을 드래그하세요. 잡은 행 수만큼 그림이 만들어지고 그만큼 돈이 나갑니다. 그림이 필요한 행만 잡으면 아낄 수 있습니다.',
+   check:v=>{const m=/^G(\d+)(?::G(\d+))?$/.exec(v);
+     if(!m)return 'G열 안에서 골라 주세요. (예: G2:G16 또는 G6:G16)';
+     const a=+m[1], b=m[2]?+m[2]:a;
+     if(a<2||b>16)return '문항은 G2 부터 G16 까지 있습니다.';
+     ctx.imgFrom=a; ctx.imgTo=b; return null;}},
+  {type:'msg',title:'[설정 6/8] 입력 이미지 설정',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'입력 이미지를 사용하시겠습니까?\n\n예: 기존 이미지를 편집/합성할 경우\n아니요: 텍스트만으로 새 이미지 생성',
+   hint:'참고할 사진을 주는 기능입니다. 이번엔 [아니오].',
+   check:v=>v==='n'?null:'이번엔 참고 사진 없이 만듭니다. [아니오].'},
+  {type:'input',title:'[설정 7/8] 결과 저장 열 지정',def:'',
+   text:'생성된 이미지 파일 경로를 기록할 열 문자를 입력하세요 (예: K, k)',
+   hint:'비어 있는 H열.',
+   check:v=>v.trim().toUpperCase()==='H'?null:'H 를 입력하세요.'},
+  {type:'act',run:async ctx=>{
+    const from=ctx.imgFrom||2, to=ctx.imgTo||16;
+    const list=[];
+    for(let r=from;r<=to;r++)
+      list.push(['H'+r,'C:\\MyTrustedFiles\\이미지생성\\Row_'+r+'_20260825_190455_NanoBanana.png']);
+    await runRows(ctx.sheet,list,'이미지 생성 중...','이미지 생성 완료');
+    const cnt=to-from+1, usd=(cnt*0.067).toFixed(6), krw=Math.round(cnt*0.067*1380);
+    await msgbox({title:'AI 사용 요약',icon:'🎨',buttons:[['확인','ok',1]],
+      text:'=== Gemini 3.1 Flash Image (기본 권장) ===\n처리 완료: '+cnt+'개 행\n생성 성공: '+cnt+'장\n생성 실패: 0장\n선택 해상도: 1K\n선택 비율: 1:1\n선택 티어: 유료 1등급\n\n=== 비용 상세 (USD) ===\n전체 비용: $'+usd+'\n* 비용은 응답 usage 토큰 기준으로 기록\n  (입력 $0.50/1M, 출력 이미지 토큰 $60/1M)\n* 이미지당 환산 참고: 1K $0.067 / 2K $0.101 / 4K $0.151\n\n저장 위치: C:\\MyTrustedFiles\\이미지생성',
+      hint:'잡은 '+cnt+'행 모두 그림이 만들어졌습니다. 약 '+krw.toLocaleString()+'원입니다. 문항 안에 \'없음\' 이라고 적혀 있어도 그 행까지 만듭니다. 이 실습의 15문항 중 그림이 필요한 것은 5개뿐이니, 실제로는 그 구간만 나눠서 돌리세요. H열에는 경로만 적히니 시트에서 보려면 [경로 이미지를 열 단위로 삽입] 을 쓰세요.'});
+  }}]}],
+ make:sheet5,
+ quiz:[
+  {q:'15개 문항의 요청 문장을 손으로 쓰지 않아도 되는 이유는?',
+   a:['AI가 알아서 만들어 줘서','H열이 수식이라 표(B~G)만 채우면 문장이 저절로 완성돼서','추가 프롬프트가 필요 없어서'],c:1,
+   why:'분류표를 고치면 프롬프트도 함께 고쳐집니다. 이것이 이 방식의 핵심입니다.',hint:'이 화면 위쪽 [내 프롬프트 만들기 도구] 아래에 회색으로 적힌 엑셀 수식을 다시 보세요.'},
+  {q:'공통 프롬프트와 추가 프롬프트의 역할은?',
+   a:['둘 다 같은 것입니다','공통은 문항을 만드는 규칙(모든 행), 추가는 이번 문항의 조건(행마다)','공통이 더 중요하고 추가는 선택입니다'],c:1,
+   why:'규칙은 한 번만 쓰고 조건만 행마다 바꾸는 구조입니다.',hint:'무엇이 행마다 달라지는지 생각해 보세요.'},
+  {q:'학생용 시험지에 정답과 풀이가 딸려 나가지 않게 하려면 분할 문구에 무엇을 적나요?',
+   a:['## [문항 구성]  — 한 개만 적는다',
+      '## [문항 구성],**정답:**  — 두 개를 쉼표로 적는다',
+      '**정답:**  — 한 개만 적는다'],c:1,
+   why:'기준이 하나면 그 말 뒤부터 셀 끝까지 전부 나갑니다. 두 번째 기준이 \'여기서 끊어라\'는 표시입니다. '
+       +'세 번째 답은 반대로 교사용 정답지를 만드는 방법입니다.',
+   hint:'기준을 하나만 적으면 어디까지 잘라 오는지 다시 떠올려 보세요.'}]});
+
+/* ══════════ 미션 6 ══════════ */
+const R6=[];
+for(let i=1;i<=12;i++){
+  const bad=(i===4||i===7||i===11);
+  R6.push(`## 정답\n${['①','②','③','④','⑤'][i%5]}\n\n## 풀이\n제시 자료의 핵심 개념을 정확히 담은 선택지가 정답입니다. 나머지 선택지는 개념을 뒤바꾸거나 범위를 넘어선 진술입니다.\n\n## 오류 가능성\n**오류 가능성 ${bad?'있음':'없음'}**\n`+
+   (bad?'- 중복 답안: 다른 선택지도 정답으로 볼 여지가 있어 복수 정답 시비가 우려됩니다.\n- 표현: 단정적 표현이 있어 다듬는 것이 좋겠습니다.'
+       :'- 맞춤법 및 띄어쓰기: 오류가 발견되지 않습니다.\n- 중복 답안 및 답 없음: 정답이 유일하며 시비 여지가 없습니다.'));
+}
+function sheet6(){
+  const c={A1:'번호',B1:'문항 이미지 경로',C1:'점검 결과 — 비워 두세요'};
+  for(let i=0;i<12;i++)c['A'+(i+2)]=i+1;
+  return new Sheet({name:'1_문항 점검',tabs:['① 시작 안내','1_문항 점검','예시 결과'],
+    cols:['A','B','C'],w:{A:40,B:326,C:338},n:13,cells:c});
+}
+const AIO_HTML=`<div class="card"><h3>1단계 — 올인원 도우미로 시험지를 문항 낱개로 자르기</h3>
+ <p style="font-size:13.5px;margin:0 0 8px">여기는 <b>엑셀이 아니라 [교사를 위한 올인원 도우미]</b> 프로그램입니다.
+   왼쪽 [PDF·문서 변환] 묶음 → <b>[이미지 ↔ PDF · GIF 만들기]</b> → 위쪽 <b>[PDF문항 → 개별이미지]</b> 탭.</p>
+ <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)">
+  <div style="background:var(--blue);color:var(--on-accent);padding:7px 12px;font-size:12.5px;font-weight:700">
+   이미지를 PDF 또는 GIF로 변환, PDF를 이미지로 변환</div>
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--line);font-size:12.5px">
+   <span style="padding:8px 15px;color:var(--ink2)">이미지 → PDF</span>
+   <span style="padding:8px 15px;color:var(--ink2)">PDF → 이미지</span>
+   <span style="padding:8px 15px;background:var(--blue);color:var(--on-accent);font-weight:700">PDF문항 → 개별이미지</span>
+   <span style="padding:8px 15px;color:var(--ink2)">이미지 → GIF</span></div>
+  <div style="padding:14px 16px">
+   <div style="text-align:center;font-weight:800;color:var(--blue-d);margin-bottom:12px">PDF문항을 개별 이미지로 추출</div>
+   <table class="t" style="margin:0"><tr><td style="width:130px">PDF 파일</td><td>2026_2학기_기말_사회.pdf</td></tr>
+    <tr><td>출력 폴더</td><td>D:\\2026_평가\\문항이미지\\</td></tr>
+    <tr><td>저장 DPI</td><td>300 dpi  <span style="color:var(--ink2)">(그대로 두세요)</span></td></tr>
+    <tr><td>문항 번호 형태</td><td><b>두 자리 숫자 + 점 (1., 12.)</b>  <span style="color:var(--ink2)">← 시험지 번호 모양에 맞춰 고릅니다</span></td></tr>
+    <tr><td>문항 최소 높이</td><td>25.0 mm  <span style="color:var(--ink2)">(너무 작게 잘리지 않게)</span></td></tr>
+    <tr><td>여백(mm)</td><td>상 0.0 / 하 0.0 / 좌 -0.1 / 우 -0.1  <span style="color:var(--ink2)">← 2단 세로 실선을 자동으로 제외하는 값</span></td></tr></table>
+   <div style="margin-top:12px;display:flex;gap:8px">
+    <span style="background:var(--blue);color:var(--on-accent);padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700">엑셀 파일을 이용한 추출 시작</span>
+    <span style="background:var(--green);color:var(--on-accent);padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700">엑셀 파일 없이 추출 시작</span>
+    <span style="background:var(--red);color:var(--on-accent);padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700">중지</span></div>
+  </div></div>
+ <div class="tip" style="margin-top:10px"><b>결과</b> — 고른 출력 폴더 <b>아래에 PDF 이름으로 폴더가 하나 더 생기고</b>, 그 안에
+  <code>문항_001_001.png</code>, <code>문항_001_002.png</code> … 가 만들어집니다.
+  앞 세 자리는 <b>PDF 쪽 번호</b>, 뒤 세 자리는 <b>그 쪽 안에서 몇 번째 문항</b>인지입니다.
+  그래서 번호 순서가 그대로 시험지 순서가 됩니다.</div></div>`;
+M.push({n:6,title:'문항 점검 — 12문항 오류를 3분에',mins:'9분  (심화)',
+ lead:'올인원 도우미로 시험지를 문항 낱개 이미지로 자르고, 엑셀에서 한꺼번에 검토시킵니다.',
+ why:`<p>사람은 자기가 낸 문제의 오류를 잘 못 봅니다. 복수 정답 시비는 시험이 끝난 뒤에 터집니다.</p>
+  <p>핵심은 <b>문항 하나 = 이미지 한 장</b> 으로 잘라 낱개로 보내는 것입니다.
+   시험지 PDF를 통째로 주면 AI가 문항을 섞어 읽고, 결과도 한 칸에 뭉쳐 나옵니다.</p>`,
+ extra:AIO_HTML,
+ cards:[
+  {h:'PDF를 통째로 던지기',p:'여러 문항이 섞여 어느 선택지가 어느 문항 것인지 헷갈립니다.',fix:'반드시 문항별 이미지로 자르기'},
+  {h:'AI 판정을 그대로 믿기',p:'"오류 없음"이라고 나와도 오류가 없다는 뜻은 아닙니다.',fix:'한 번 더 볼 곳을 알려 주는 도구로 쓰기'},
+  {h:'결과 12개를 다 읽기',p:'3분 아끼려다 20분 씁니다.',fix:'[하이라이트 처리]로 "오류 가능성 있음"만 찾기'}],
+ cmd:'폴더 내 파일 목록 가져오기',
+ cmds:{'폴더 내 파일 목록 가져오기':0,'Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리':0,'하이라이트 처리':0},
+ steps:['올인원 도우미 → [이미지 ↔ PDF · GIF 만들기] → [PDF문항 → 개별이미지] → 추출',
+  '[일반 기능] → [폴더 내 파일 목록 가져오기] → 출력 위치 B2',
+  '[Gemini 실행] → 행 단위 병렬 처리 → 프롬프트는 [문제 제작_사회과정답과 풀이_오류 가능성표시]',
+  '데이터 범위 B2:B13 / 결과 열 C',
+  '[일반 기능] → [하이라이트 처리] → "오류 가능성 있음"'],
+ wiz:ctx=>[
+  {type:'msg',title:'입력 방식 선택',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'폴더 경로 입력 방식을 선택하세요:\n\n[예]: 폴더 경로를 직접 입력\n[아니오]: 대화상자에서 폴더를 클릭해서 선택',
+   check:v=>v==='n'?null:'[아니오]로 폴더를 눈으로 고르세요.'},
+  {type:'msg',title:'폴더 선택',icon:'📁',buttons:[['확인','ok',1]],
+   text:'선택한 폴더:\nD:\\2026_평가\\문항이미지\\연습용_가상시험지_2학년사회\\\n\n(1단계에서 만든 문항 이미지 12장이 들어 있습니다)'},
+  {type:'pick',title:'출력 위치 선택',want:'B2',
+   text:'파일 목록을 입력할 시작 셀을 선택하세요:\n(파일 목록은 선택한 셀부터 아래쪽으로 입력됩니다)',
+   hint:'B2 를 클릭하세요.',
+   check:v=>v==='B2'?null:'B2 를 고르세요. (지금 고른 것: '+v+')'},
+  {type:'msg',title:'하이퍼링크 적용 선택',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'파일 경로에 하이퍼링크를 적용할까요?\n\n[예]: 클릭하면 해당 파일이 열리는 링크로 입력\n[아니오]: 일반 텍스트로 입력',
+   hint:'[예]로 하면 결과를 보다가 셀을 눌러 원본 문항을 바로 열어 볼 수 있습니다.'},
+  {type:'act',run:async ctx=>{
+    const L=[];for(let i=0;i<12;i++)L.push(['B'+(i+2),
+      'D:\\2026_평가\\문항이미지\\문항_'+String(Math.floor(i/4)+1).padStart(3,'0')+'_'+String(i%4+1).padStart(3,'0')+'.png']);
+    await runRows(ctx.sheet,L,'파일 목록 입력 중...','문항 12개 목록 입력 완료');
+  }},
+  {type:'input',title:'동시 실행 수 설정',def:'10',store:'workers',
+   text:'동시에 몇 개 행을 처리할까요?\n\n[gemini-3.7-flash - API 키 등급별 추천]\n  무료 키(결제 미연결)   8\n  Tier 1(결제 연결)   20\n\n입력 범위: 1~30',
+   check:v=>{const n=+v;return (n>=1&&n<=30)?null:'1~30 사이 숫자를 넣으세요.'}},
+  {type:'msg',title:'URL 확장 모드',icon:'❓',buttons:[['예','y',1],['아니오','n']],
+   text:'셀 텍스트에 포함된 URL의 실제 콘텐츠를\n가져와 분석에 포함할까요?\n\n[아니오]  URL을 텍스트 문자열로만 취급',
+   check:v=>v==='n'?null:'파일 경로만 있으므로 [아니오].'},
+  {type:'msg',title:'병렬 처리 설정 확인',icon:'ℹ️',buttons:[['확인','ok',1]],
+   text:'[설정 요약]\n모델: gemini-3.7-flash / thinkingLevel: high\n행별 개별 처리(배치 1 고정) · 동시 실행: 10개\n\n[파일 크기 제한 (행당 총 용량)]\n  Gemini 3.x - 행당 최대 100MB'},
+  {type:'msg',title:'프롬프트 가져오기 방식 선택',icon:'❓',
+   buttons:[['예','y'],['아니오','n',1],['취소','c']],
+   text:'프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 직접 \'셀 범위 선택\'으로 진행\n[아니오] \'프롬프트 관리 폼\'에서 선택\n[취소] 작업 중단',
+   check:v=>v==='n'?null:'점검 프롬프트가 이미 들어 있습니다. [아니오].'},
+  {type:'form',pre:'문제 제작_사회과정답과 풀이_오류 가능성표시',decoy:'문제 제작_사회과정답과 풀이',
+   hint:'[문제 제작_사회과정답과 풀이_오류 가능성표시] 를 고르세요. 이름 끝의 "오류 가능성표시"가 핵심입니다.',
+   check:v=>v==='문제 제작_사회과정답과 풀이_오류 가능성표시'?null:
+     '"오류 가능성표시" 가 붙은 쪽을 고르세요. 오류 여부를 맨 앞줄에 적어 주어 찾기 쉽습니다. (지금 고른 것: '+v+')'},
+  {type:'pick',title:'데이터 범위 선택',want:'B2:B13',
+   text:'파일 경로 또는 텍스트가 들어 있는\n셀 범위를 선택하세요.\n(PDF / 이미지 / 음성 / 텍스트 파일 지원)',
+   hint:'문항 경로 12개 — B2 부터 B13 까지 드래그.',
+   check:v=>v==='B2:B13'?null:'문항 경로는 B2:B13 (12행) 입니다. (지금 고른 것: '+v+')'},
+  {type:'input',title:'추가 프롬프트 열',def:'',
+   text:'추가로 사용할 \'행별 프롬프트\' 열 문자를\n입력하세요. (예: B)\n사용하지 않으면 빈 칸으로 두고 [확인]',
+   hint:'문항마다 다른 부탁이 없으니 비워 두고 [확인].',
+   check:v=>v.trim()===''?null:'이번엔 비워 두고 [확인]을 눌러 보세요.'},
+  {type:'input',title:'결과 저장 열',def:'',
+   text:'결과를 기록할 열의 문자를 입력하세요 (예: K):',
+   check:v=>{const u=v.trim().toUpperCase();
+     if(u==='B')return 'B열에는 문항 경로가 있습니다. 빈 열 C 를 쓰세요.';
+     return u==='C'?null:'C 를 입력하세요.'}},
+  {type:'act',run:async ctx=>{
+    await runRows(ctx.sheet,R6.map((v,i)=>['C'+(i+2),v]),
+      'Gemini 병렬처리 - 파이썬 병렬 처리 실행 중 (시간이 걸릴 수 있습니다)...','문항 12개 점검 완료');
+    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],
+      text:'병렬 처리 완료!\n\n총 행 수: 12  ·  성공 12 / 실패 0\n모델: gemini-3.7-flash\n예상 비용(USD): $0.030615'});
+    toast('이제 하이라이트로 문제 있는 문항만 찾아봅시다');
+  }},
+  {type:'input',title:'하이라이트 키워드 입력 창',def:'‘,’,..,  ,·,나의,내가,나만의,느낌,깨달음,이해함,알게 됨,노력함,기여함,인식함,고찰함,다짐함,유튜브,유튜버,학생,부족,미흡,소극적,대회,대한민국,한국,에서는,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,습니다',
+   text:'하이라이트할 키워드를 쉼표(,)로 구분해 입력하세요.\n(실제로는 여러 줄이 들어가는 큰 입력칸이 있는 전용 창입니다)',
+   hint:'기본 키워드가 50개 가까이 미리 채워져 있습니다. 전부 지우고  오류 가능성 있음  만 남기세요. 그대로 두면 거의 모든 글자가 빨갛게 됩니다.',
+   check:v=>{const t=v.trim();
+     if(t===''){return '키워드가 비면 \'취소되었습니다\' 안내가 뜨고 끝납니다.';}
+     if(t.indexOf('나의')>=0||t.indexOf('습니다')>=0||t.split(',').length>3)
+       return '기본 키워드가 아직 남아 있습니다. 칸을 모두 지우고 "오류 가능성 있음" 만 넣어 보세요.';
+     return t==='오류 가능성 있음'?null:'프롬프트가 이 문구를 쓰도록 시켜 두었습니다. "오류 가능성 있음" 을 그대로 입력하세요.'}},
+  {type:'pick',title:'범위 선택',want:'C2:C13',
+   text:'하이라이트할 범위를 선택:',
+   hint:'점검 결과가 있는 C2 부터 C13 까지 끌어 선택하세요.',
+   check:v=>v==='C2:C13'?null:'C2:C13 를 고르세요. (지금 고른 것: '+v+')'},
+  {type:'act',run:async ctx=>{
+    ctx.sheet.hlWord='오류 가능성 있음';
+    ctx.sheet.render(); ctx.sheet.follow('C8',true);
+    ctx.sheet.setStatus('준비 — 3개 문항에 오류 가능성이 표시되었습니다 (빨간 굵은 글씨)');
+    await msgbox({title:'작업 완료',icon:'🔍',buttons:[['확인','ok',1]],
+      text:'하이라이트 작업이 완료되었습니다!\n(최종 키워드: 오류 가능성 있음)',
+      hint:'셀 배경이 칠해지는 것이 아니라, 일치한 글자만 빨간색 굵은 글씨로 바뀝니다. 12문항 중 3개만 열어 보면 됩니다. 실제 지필평가는 20~25문항이니, 그때는 행을 늘리고 범위만 그만큼 넓게 잡으면 됩니다.'});
+  }}],
+ make:sheet6,
+ quiz:[
+  {q:'시험지 PDF 한 개를 통째로 AI에 주면 왜 좋지 않나요?',
+   a:['용량이 너무 커서','여러 문항이 섞여 어느 선택지가 어느 문항 것인지 헷갈리고 결과도 한 칸에 뭉칩니다','PDF를 지원하지 않아서'],c:1,
+   why:'문항별 이미지로 잘라야 행 단위로 결과가 나뉘어 확인하기 쉽습니다.',hint:'행 하나 = 질문 하나 라는 원칙을 떠올려 보세요.'},
+  {q:'문항_003_002.png 는 어떤 문항인가요?',a:['3번 문항의 2번 선택지','PDF 3쪽의 두 번째 문항','2쪽의 세 번째 문항'],c:1,
+   why:'앞 세 자리가 쪽 번호, 뒤 세 자리가 그 쪽 안의 문항 순서입니다.',hint:'파일 이름 규칙을 다시 보세요.'},
+  {q:'AI가 "오류 가능성 없음"이라고 했습니다. 어떻게 해야 하나요?',
+   a:['안심하고 그대로 출제합니다','오류가 없다는 보장은 아니므로 사람이 최종 확인합니다','다시 한 번 더 돌려 봅니다'],c:1,
+   why:'이 도구는 한 번 더 볼 곳을 알려 주는 것이지 최종 판단을 대신하지 않습니다.',hint:'프롬프트가 무엇을 판정해 주는 도구였는지 다시 읽어 보세요.'}]});
+</script>
+<script>
+/* 미션 정규화 */
+M.forEach(m=>{ if(!m.runs) m.runs=[{label:'연습 시작',steps:m.wiz}]; });
+
+function missionHTML(m){
+  const cards=m.cards.map(c=>`<div class="pcard"><h4>${esc(c.h)}</h4><p>${esc(c.p)}</p>
+    <span class="fix">${esc(c.fix)}</span></div>`).join('');
+  const steps=m.steps.map(s=>`<li>${esc(s)}</li>`).join('');
+  const runs=m.runs.map((r,i)=>
+    `<button class="btn${i?' ghost':''}" data-run="${i}"${(m.gated&&i)?' disabled title="앞 단계를 먼저 끝내세요"':''}>${esc(r.label)}</button>`).join('');
+  return `<section class="pane" id="p${m.n}">
+  <div class="card">
+    <span class="pill">미션 ${m.n}</span><span class="pill g">${esc(m.mins)}</span>
+    <h2>${esc(m.title)}</h2><p class="lead">${esc(m.lead)}</p>
+    ${m.why||''}
+    <h3>시작 전에 — 자주 하는 실수 ${m.cards.length}가지</h3>
+    <div class="cards">${cards}</div>
+  </div>
+  ${m.extra||''}
+  <div class="card">
+    <h3>따라 해 봅시다</h3>
+    <p style="font-size:13.5px;margin:0 0 6px">리본의 <b>DRM AI v10.0</b> 을 눌러
+      <b>${esc(m.cmd)}</b> 를 찾아 보세요. 노랗게 표시해 두었습니다.
+      (아래 파란 단추를 눌러도 같은 곳에서 시작합니다)</p>
+    ${m.cmdNote?`<p style="font-size:12.5px;color:var(--ink2);margin:0 0 8px">${m.cmdNote}</p>`:''}
+    <div id="rib${m.n}"></div>
+    <div id="sh${m.n}"></div>
+    <div class="btnrow" id="rb${m.n}">${runs}
+      <button class="btn gy" data-reset="1">시트 되돌리기</button></div>
+  </div>
+  <div class="card"><h3>순서 요약 — 실습 엑셀 파일에서도 이 순서입니다</h3>
+    <ol class="steps">${steps}</ol></div>
+  <div class="card"><h3>자가 진단</h3>
+    <p class="lead" style="margin-bottom:12px">세 문제를 다 맞히면 이 미션이 끝난 것으로 표시됩니다.</p>
+    ${quizHTML(m.n,m.quiz)}</div>
+  <div class="card"><div class="btnrow">
+    <button class="btn ghost" onclick="go(${m.n-1})">← 이전</button>
+    <button class="btn" onclick="finish(${m.n});go(${m.n+1})">
+      ${m.n===6?'미션 6 마침 · 수료 화면으로 →':'미션 '+m.n+' 마침 · 다음으로 →'}</button>
+  </div></div>
+  </section>`;
+}
+
+const SHEETS={};
+function mountMission(m){
+  wireRibbon('rib'+m.n,cmd=>{
+    if(MENUWAIT&&MENUWAIT.n===m.n){
+      if(cmd===MENUWAIT.cmd){const cb=MENUWAIT.cb;MENUWAIT=null;cb(cmd);return}
+      toast('지금 누를 것은 [ '+MENUWAIT.cmd+' ] 입니다');return;
+    }
+    const map=m.cmds||{[m.cmd]:0};
+    if(cmd in map){ startRun(m,map[cmd]); }
+    else{
+      const list=Object.keys(map).map(k=>'  · '+k).join('\n');
+      msgbox({title:'연습창 안내',icon:'💡',buttons:[['확인','ok',1]],
+        text:'[ '+cmd+' ]\n\n실제 추가기능에는 있는 기능이지만,\n이 미션에서 연습할 것은 아닙니다.\n\n이번 미션에서 쓸 메뉴:\n'+list});
+    }
+  });
+  resetSheet(m);
+  const rb=document.getElementById('rb'+m.n);
+  rb.querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>startRun(m,+b.dataset.run));
+  rb.querySelector('[data-reset]').onclick=()=>{
+    if(busy){toast('먼저 열려 있는 창을 끝내 주세요. 그만두려면 Esc');return}
+    resetSheet(m);
+    if(m.gated){m._step1=false;
+      rb.querySelectorAll('[data-run]').forEach(b=>{
+        if(+b.dataset.run){b.disabled=true;b.title='앞 단계를 먼저 끝내세요'}});}
+    toast('시트를 처음 상태로 되돌렸습니다. 앞 단계부터 다시 하세요');};
+  wireQuiz(m.n,m.quiz,()=>{finish(m.n);toast('미션 '+m.n+' 완료로 표시했습니다')});
+}
+function resetSheet(m){
+  const old=SHEETS[m.n];
+  if(old){ old.destroyed=true; old.cancelPick(); }
+  const s=m.make(); SHEETS[m.n]=s;
+  s.mount(document.getElementById('sh'+m.n));
+}
+let busy=false;
+async function startRun(m,i){
+  if(MENUWAIT){toast('지금은 리본에서 [ '+MENUWAIT.cmd+' ] 를 누르실 차례입니다. 그만두려면 Esc');return}
+  if(busy){toast('먼저 열려 있는 창을 끝내 주세요. 그만두려면 Esc');return}
+  if(m.gated&&i>0&&!m._step1){
+    toast('먼저 ① 문항 15개 만들기 를 끝내 주세요'); return;}
+  busy=true;
+  const ctx={sheet:SHEETS[m.n],m:m,runLabel:(m.runs[i]&&m.runs[i].short)||''};
+  if(m.startPage&&ctx.sheet)ctx.sheet.show(m.startPage);
+  try{
+    const steps=m.runs[i].steps;
+    const r=await runWizard(typeof steps==='function'?steps(ctx):steps,ctx);
+    if(r==='OK'&&SHEETS[m.n]===ctx.sheet){
+      if(m.gated&&i===0){
+        m._step1=true;
+        const rb=document.getElementById('rb'+m.n);
+        rb.querySelectorAll('[data-run]').forEach(b=>{b.disabled=false;b.removeAttribute('title')});
+        toast('문항이 만들어졌습니다. 이제 ② 한글 시험지 를 눌러 보세요');
+      } else toast('잘하셨습니다. 아래 자가 진단으로 확인해 보세요');
+    }
+  }catch(e){ console.error(e); toast('연습창에 문제가 생겼습니다'); }
+  finally{ busy=false; WIZBADGE=''; closeDlg();
+    if(MENUWAIT&&MENUWAIT.n===m.n)MENUWAIT=null;
+    setRibbonHot(m.n,Object.keys(m.cmds||{[m.cmd]:0}));
+    const sh=SHEETS[m.n];
+    if(sh&&!sh.destroyed&&sh._await)sh.cancelEdit(); }
+}
+
+/* 부팅 */
+(function boot(){
+  document.getElementById('missions').innerHTML=M.map(missionHTML).join('');
+  document.getElementById('nav').innerHTML=NAVS.map((n,i)=>
+    `<li><button onclick="go(${i})"><span class="n">${n[0]}</span>
+      <span>${esc(n[1])}<span class="mm">${esc(n[2])}</span></span></button></li>`).join('');
+  document.getElementById('ribbon0').innerHTML=ribbonHTML('rib0','');
+  wireRibbon('rib0',cmd=>{
+    msgbox({title:'메뉴 확인',icon:'💡',buttons:[['확인','ok',1]],
+      text:'[ '+cmd+' ]\n\n실제 추가기능에 있는 메뉴입니다.\n미션 1부터 하나씩 직접 눌러 보게 됩니다.'});
+  });
+  M.forEach(m=>{
+    document.getElementById('rib'+m.n).innerHTML=
+      ribbonHTML('rib'+m.n,Object.keys(m.cmds||{[m.cmd]:0}));
+    mountMission(m);
+  });
+  pbInit();
+  document.getElementById('cert').innerHTML=
+    `<div style="border:2px solid var(--green);border-radius:12px;padding:18px 20px;
+      background:var(--green-l);text-align:center">
+      <div style="font-size:15px;font-weight:800;color:var(--green)">DRM AI 엑셀 추가기능 40분 첫걸음 · 수료</div>
+      <div style="font-size:13px;color:var(--ink2);margin-top:6px">
+        행 단위 병렬 처리 · 마크다운 정리 · 분할 기록 · 파일명 일괄 변경 · 개별 메일 ·
+        절약 모드 · 시험 출제 풀코스 · 문항 점검</div></div>`;
+  go(0); paint();
+})();
+</script>
+</body></html>
