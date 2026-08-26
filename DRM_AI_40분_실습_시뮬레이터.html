@@ -278,9 +278,12 @@ table.g td.banner>.cw{max-height:none;padding:5px 8px}
 :root[data-theme="dark"] table.g td.banner{background:#1b3320;color:#a8e6b0}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) table.g td.banner{
   background:#1b3320;color:#a8e6b0}}
-table.g mark.kw{background:none;color:#d40000;font-weight:800}
-:root[data-theme="dark"] table.g mark.kw{color:#ff8a8a}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) table.g mark.kw{color:#ff8a8a}}
+table.g mark.kw,.dlg .bd mark.kw{background:none;color:#d40000;font-weight:800}
+:root[data-theme="dark"] table.g mark.kw,
+:root[data-theme="dark"] .dlg .bd mark.kw{color:#ff8a8a}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) table.g mark.kw,
+  :root:not([data-theme="light"]) .dlg .bd mark.kw{color:#ff8a8a}}
 table.g.picking td:hover{background:var(--blue-l)}
 .gridbar{display:flex;gap:10px;align-items:center;padding:6px 10px;font-size:12px;
   background:var(--gray-l);border-bottom:1px solid var(--line);color:var(--ink2);
@@ -367,6 +370,8 @@ table.g.picking td:hover{background:var(--blue-l)}
 .dlg .bd .ic{float:left;font-size:26px;margin:0 13px 6px 0}
 .dlg .bd:has(>.ic){display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 13px;align-items:start}
 .dlg .bd:has(>.ic)>.ic{float:none;margin:0}
+/* 본문은 반드시 한 칸 안에 — 칠한 글자가 있어도 흐름이 끊기지 않게 */
+.dlg .bd>.bdt{min-width:0;display:block;overflow-wrap:anywhere}
 .dlg .in{width:100%;padding:6px 9px;border:1px solid #7a7a7a;border-radius:3px;
   font-size:13.5px;margin-top:10px;background:#fff;color:#111;
   font-family:"Malgun Gothic",sans-serif}
@@ -810,7 +815,9 @@ class Sheet{
     this.active = cfg.active||0;
     this.tabs = cfg.tabs || this.pages.map(p=>p.name);
     this.status = cfg.status||'준비';
-    this.host=null; this.pick=null; this.hlWord=null;
+    this.host=null; this.pick=null;
+    /* 하이라이트 — 실제 기능은 고른 범위만 훑으므로 범위와 시트를 함께 기억한다 */
+    this.hlWord=null; this.hlRange=null; this.hlPage=null;
   }
   get P(){return this.pages[this.active]||this.pages[0]}
   get name(){return this.P.name}
@@ -879,7 +886,7 @@ class Sheet{
         const isH=(r===1&&this.hdr!==false&&v!=null&&String(v)!=='');
         const raw=String(v==null?'':v);
         let inner=esc(raw);
-        if(this.hlWord){const k=esc(this.hlWord);
+        if(this.hlWord&&this.inHl(ref)){const k=esc(this.hlWord);
           if(k&&inner.indexOf(k)>=0)inner=inner.split(k).join('<mark class="kw">'+k+'</mark>');}
         body+=`<td class="${isH?'hdr':''} ${cls}${canEdit?' edit':''}" data-ref="${ref}"
           title="${esc(canEdit?'여기를 눌러 직접 입력할 수 있습니다':raw.slice(0,400))}"
@@ -1018,10 +1025,37 @@ class Sheet{
       const td=e.target.closest('td.more'); if(!td)return;
       const v=this.cells[td.dataset.ref];
       if(v==null||String(v)==='')return;
+      /* 하이라이트가 걸린 칸이면 그 색까지 그대로 — 실제 엑셀 칸도 글자가 빨갛게 남아 있다 */
+      const lit=(this.hlWord&&this.inHl(td.dataset.ref)&&String(v).indexOf(this.hlWord)>=0);
       msgbox({title:'셀 내용 전체 보기  —  '+td.dataset.ref,icon:'📄',
-        buttons:[['확인','ok',1]],text:String(v),
-        hint:'엑셀에서도 칸이 좁으면 이렇게 잘려 보입니다. 실제로는 칸 안에 내용이 다 들어 있습니다.'});
+        buttons:[['확인','ok',1]],text:String(v),hl:lit?this.hlWord:'',
+        hint:lit
+          ?'엑셀에서도 칸이 좁으면 이렇게 잘려 보입니다. 칠해 둔 글자는 칸 안에 빨간 굵은 글씨로 남아 있습니다 — 이 문항을 한 번 더 살펴보세요.'
+          :'엑셀에서도 칸이 좁으면 이렇게 잘려 보입니다. 실제로는 칸 안에 내용이 다 들어 있습니다.'});
     });
+  }
+  /* 이 칸이 하이라이트 범위 안인가 — 실제 기능이 rng 만 훑는 것과 같다 */
+  inHl(ref){
+    if(!this.hlWord)return false;
+    if(this.hlPage!=null&&this.hlPage!==this.active)return false;
+    if(!this.hlRange)return true;
+    const b=parseRef(this.hlRange), m=/^([A-Z]+)(\d+)$/.exec(ref);
+    if(!b||!m)return false;
+    const c=colN(m[1]), r=+m[2];
+    return c>=Math.min(b.c1,b.c2)&&c<=Math.max(b.c1,b.c2)
+        && r>=Math.min(b.r1,b.r2)&&r<=Math.max(b.r1,b.r2);
+  }
+  /* 실제로 걸린 칸들 — 숫자를 지어내지 않기 위해 직접 센다 */
+  hlRefs(){
+    if(!this.hlWord)return [];
+    const out=[];
+    for(let r=1;r<=this.n;r++)for(const c of this.cols){
+      const ref=c+r;
+      if(!this.inHl(ref))continue;
+      const v=this.cells[ref];
+      if(v!=null&&String(v).indexOf(this.hlWord)>=0)out.push(ref);
+    }
+    return out;
   }
   setStatus(t){this.status=t;const e=this.host&&this.host.querySelector('[data-st]');if(e)e.textContent=t}
   follow(ref,alsoX){
@@ -1138,7 +1172,7 @@ function closeDlg(){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&escFn){const f=escFn;closeDlg();f()}});
 
-function msgbox(o){ // {title,text,icon,buttons:[[label,val,isDef]],hint,err}
+function msgbox(o){ // {title,text,icon,buttons:[[label,val,isDef]],hint,err,hl}
   return new Promise(res=>{
     const bts=(o.buttons||[['확인','ok',1]]).map((b,i)=>
       `<button data-v="${esc(b[1])}" class="${b[2]?'def':''}">${esc(b[0])}</button>`).join('');
@@ -1146,7 +1180,9 @@ function msgbox(o){ // {title,text,icon,buttons:[[label,val,isDef]],hint,err}
       ${(o.step||WIZBADGE)?`<div class="wizstep"><span>${esc(o.step||WIZBADGE)}</span>
         ${o.sq?`<span class="sq">${esc(o.sq)}</span>`:''}</div>`:''}
       <div class="tt"><span>${esc(o.title||'')}</span><button class="x" data-close>✕</button></div>
-      <div class="bd"><span class="ic">${o.icon||'ℹ️'}</span>${esc(o.text||'')}</div>
+      <div class="bd"><span class="ic">${o.icon||'ℹ️'}</span><span class="bdt">${
+        o.hl ? esc(o.text||'').split(esc(o.hl)).join('<mark class="kw">'+esc(o.hl)+'</mark>')
+             : esc(o.text||'')}</span></div>
       ${o.real?`<div class="realnote"><b>연습창에서만 다릅니다</b> — ${esc(o.real)}</div>`:''}
       ${o.err?`<div class="err">${esc(o.err)}</div>`:''}
       ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
@@ -2907,17 +2943,30 @@ M.push({n:6,title:'문항 점검 — 12문항 오류를 3분에',mins:'9분  (�
      if(t.indexOf('나의')>=0||t.indexOf('습니다')>=0||t.split(',').length>3)
        return '기본 키워드가 아직 남아 있습니다. 칸을 모두 지우고 "오류 가능성 있음" 만 넣어 보세요.';
      return t==='오류 가능성 있음'?null:'프롬프트가 이 문구를 쓰도록 시켜 두었습니다. "오류 가능성 있음" 을 그대로 입력하세요.'}},
-  {type:'pick',title:'범위 선택',want:'C2:C13',
+  {type:'pick',title:'범위 선택',want:'C2:C13',store:'hlRange',
    text:'하이라이트할 범위를 선택:',
    hint:'점검 결과가 있는 C2 부터 C13 까지 끌어 선택하세요.',
    check:v=>v==='C2:C13'?null:'C2:C13 를 고르세요. (지금 고른 것: '+v+')'},
   {type:'act',run:async ctx=>{
-    ctx.sheet.hlWord='오류 가능성 있음';
-    ctx.sheet.render(); ctx.sheet.follow('C8',true);
-    ctx.sheet.setStatus('준비 — 3개 문항에 오류 가능성이 표시되었습니다 (빨간 굵은 글씨)');
+    const sh=ctx.sheet, rng=ctx.hlRange||'C2:C13', kw='오류 가능성 있음';
+    /* 실제로는 화면을 멈춰 두고 범위를 한 칸씩 훑는다. 그동안 상태표시줄 문구도 이대로다. */
+    sh.setStatus('하이라이트 작업 중... 잠시만 기다려주세요.');
+    await new Promise(r=>setTimeout(r,650));
+    if(sh.destroyed)return;
+    sh.hlWord=kw; sh.hlRange=rng; sh.hlPage=sh.active;
+    sh.render();
+    const hit=sh.hlRefs();                 /* 숫자를 적어 두지 않고 직접 센다 */
+    if(hit.length)sh.follow(hit[0],true);
     await msgbox({title:'작업 완료',icon:'🔍',buttons:[['확인','ok',1]],
-      text:'하이라이트 작업이 완료되었습니다!\n(최종 키워드: 오류 가능성 있음)',
-      hint:'셀 배경이 칠해지는 것이 아니라, 일치한 글자만 빨간색 굵은 글씨로 바뀝니다. 12문항 중 3개만 열어 보면 됩니다. 실제 지필평가는 20~25문항이니, 그때는 행을 늘리고 범위만 그만큼 넓게 잡으면 됩니다.'});
+      text:'하이라이트 작업이 완료되었습니다!\n(최종 키워드: '+kw+')',
+      real:'실제 창은 이 두 줄이 전부입니다. 몇 칸이 걸렸는지, 어디인지는 알려 주지 않고 색으로만 남습니다. 아래 칸 수와 위치는 배우시라고 연습창이 덧붙인 것입니다.',
+      hint:'셀 배경이 칠해지는 것이 아니라, 일치한 글자만 빨간색 굵은 글씨로 바뀝니다. '
+          +'고른 '+rng+' 안에서 '+hit.length+'칸이 걸렸습니다'
+          +(hit.length?' ('+hit.join(', ')+')':'')+' — 12문항 중 이 '+hit.length+'개만 열어 보면 됩니다. '
+          +'범위 밖은 건드리지 않으므로 머리글과 다른 열은 그대로입니다. '
+          +'실제 지필평가는 20~25문항이니, 그때는 행을 늘리고 범위만 그만큼 넓게 잡으면 됩니다.'});
+    if(sh.destroyed)return;
+    sh.setStatus('준비');   /* 실제도 끝나면 상태표시줄을 되돌려 엑셀이 [준비] 로 돌아간다 */
   }}],
  make:sheet6,
  quiz:[
