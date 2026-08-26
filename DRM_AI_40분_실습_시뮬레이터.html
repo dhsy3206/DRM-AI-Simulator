@@ -256,6 +256,39 @@ table.g.picking td:hover{background:var(--blue-l)}
 .mask{position:fixed;inset:0;background:rgba(10,14,20,.5);z-index:900;
   display:none;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto}
 #dlgbox{width:100%;display:flex;justify-content:center;align-items:flex-start}
+/* 범위 선택 중에는 덮개를 통과시켜 시트를 만질 수 있게 한다 (실제 엑셀과 같은 동작) */
+.mask.pick{background:transparent;pointer-events:none;overflow:visible;
+  align-items:flex-end;justify-content:flex-end;padding:0}
+.mask.pick #dlgbox{pointer-events:none;width:auto;position:fixed;right:20px;bottom:20px}
+.mask.pick .dlg{pointer-events:auto}
+.dlg.rbox{width:min(400px,calc(100vw - 24px));box-shadow:0 14px 40px rgba(0,0,0,.4);
+  max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px)}
+.dlg.rbox .tt{cursor:move;user-select:none}
+.dlg.rbox .bd{padding:13px 16px 4px;font-size:12.5px;max-height:34vh;overflow-y:auto}
+.dlg.rbox .hint,.dlg.rbox .err{max-height:22vh;overflow-y:auto}
+.dlg.rbox .rref{display:flex;align-items:center;gap:7px;padding:10px 16px 0}
+.dlg.rbox .rref label{font-size:12px;color:#333;white-space:nowrap}
+.dlg.rbox .rref input{flex:1 1 auto;min-width:0;padding:5px 9px;border:1px solid #7a7a7a;
+  border-radius:3px;font-size:13.5px;background:#fff;color:#111;
+  font-family:Consolas,"D2Coding",monospace}
+.dlg.rbox .rhint{padding:8px 16px 0;font-size:12px;color:#4a4a4a}
+.dlg.rbox .fold{background:#e8e8e8;border:1px solid #8a8a8a;border-radius:3px;
+  font-size:11px;padding:4px 8px;white-space:nowrap;color:#222;font-family:inherit;
+  font-weight:700;cursor:pointer}
+.dlg.rbox .fold:hover{background:#dcdcdc}
+.dlg.rbox.mini .wizstep,.dlg.rbox.mini .bd,.dlg.rbox.mini .hint,
+.dlg.rbox.mini .err,.dlg.rbox.mini .realnote{display:none}
+.dlg.rbox.mini .rref{padding:9px 12px 0}
+.dlg.rbox.mini .bt{padding:8px 12px 10px}
+@media(max-width:960px){
+  /* 좁은 화면에서는 창을 위로 — 표의 아래 가장자리(끌면 따라 흐르는 자리)를 비워 둔다 */
+  .mask.pick #dlgbox{right:8px;left:8px;top:8px;bottom:auto;align-items:flex-start}
+  .dlg.rbox{width:100%}
+}
+@media(max-height:620px){
+  /* 아주 낮은 화면에서는 표도 조금 낮춰 창과 함께 들어가게 */
+  .grid{max-height:230px}
+}
 .mask.on{display:flex}
 .dlg{background:#f0f0f0;color:#111;border:1px solid #7a7a7a;border-radius:7px;
   box-shadow:0 20px 60px rgba(0,0,0,.5);width:min(500px,100%);margin:auto;
@@ -273,6 +306,11 @@ table.g.picking td:hover{background:var(--blue-l)}
   padding:5px 12px;border-bottom:1px solid #b9cde6;display:flex;
   justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
 .dlg .wizstep .sq{font-weight:600;opacity:.85}
+.dlg .realnote{background:#efe8fb;color:#3d2a63;border-top:1px solid #d6c9ee;
+  padding:9px 16px;font-size:12.5px;line-height:1.6}
+.dlg .realnote b{color:#5b3ea8}
+:root[data-theme="dark"] .dlg .realnote,
+.dlg .realnote{background:#efe8fb;color:#3d2a63}
 .dlg .inbig{height:96px;resize:vertical;font-family:Consolas,"D2Coding",monospace;
   font-size:12px;line-height:1.5}
 .dlg .bd{padding:16px 18px;font-size:13px;white-space:pre-wrap;line-height:1.55;
@@ -396,6 +434,12 @@ table.g.picking td:hover{background:var(--blue-l)}
       <br><br>휴대폰·태블릿에서도 읽으실 수 있지만, <b>칸을 끌어 범위를 고르는 연습</b>은
       마우스가 있는 PC에서 하시는 편이 훨씬 수월합니다.</div>
 
+    <div class="note" style="border-left-color:#7b5bc4;background:#efe8fb;color:#3d2a63">
+      <b>보라색 띠가 붙은 창은 이 연습창이 실제와 다른 곳입니다.</b>
+      브라우저에서는 윈도우 폴더 창을 띄우거나 진짜 파일을 바꿀 수 없기 때문입니다.
+      그런 자리에는 <b>실제로는 어떻게 되는지</b>를 그 창 안에 적어 두었습니다.
+      띠가 없는 창은 <b>글자·단추·순서가 실제 추가기능과 같습니다.</b></div>
+
     <h3>40분을 이렇게 씁니다</h3>
     <div class="note"><b>★ 표시 네 개(0·1·2·5)가 핵심 40분 코스입니다.</b>
       이 넷만 하시면 이 추가기능의 8할을 쓰실 수 있습니다.
@@ -451,7 +495,9 @@ table.g.picking td:hover{background:var(--blue-l)}
         C2 칸을 누른 채 마우스를 C13까지 끌어 내리고 손을 떼면 됩니다.</td></tr>
       <tr><td>창이 떠 있어도<br>시트를 누를 수 있습니다</td>
         <td>'범위를 선택하세요' 창이 떠 있는 동안에도 뒤쪽 시트를 마우스로 긁을 수 있습니다.
-        창을 닫지 마세요. 이 연습창에서도 똑같이 해 보시면 됩니다.</td></tr>
+        고른 자리가 창의 칸에 채워지고, 마음에 들 때까지 다시 끌어도 됩니다.
+        <b>손을 떼도 확정되지 않습니다. 창의 [확인]을 눌러야 넘어갑니다.</b>
+        창이 표를 가리면 창의 [접기] 를 누르세요. 이 연습창도 똑같이 만들어 두었습니다.</td></tr>
     </table></div>
 
     <h3>실제로 하면 돈이 얼마나 드나요</h3>
@@ -543,6 +589,7 @@ const NAVS=[['0','메뉴 찾기','3분 ★'],['1','행 단위 병렬 처리','12
 function save(){try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}}
 function finish(i){done[i]=true;save();paint()}
 function resetAll(){
+  if(typeof cancelRangeBox==='function')cancelRangeBox();
   if(typeof cancelMenuWait==='function')cancelMenuWait();
   if(typeof SHEETS!=='undefined')
     Object.values(SHEETS).forEach(sh=>{try{sh.cancelPick()}catch(e){}});
@@ -579,13 +626,14 @@ function paint(){
   });
 }
 function go(i){
+  if(cur!==i&&typeof cancelRangeBox==='function')cancelRangeBox();
   if(cur!==i&&typeof cancelMenuWait==='function')cancelMenuWait();
   if(typeof SHEETS!=='undefined'&&cur!==i)
     Object.values(SHEETS).forEach(sh=>{try{sh.cancelPick()}catch(e){}});
   cur=i;
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   const el=document.getElementById('p'+i); if(el)el.classList.add('on');
-  paint(); window.scrollTo({top:0,behavior:'smooth'});
+  paint(); pageTo(0);
   const mm=(typeof M!=='undefined')&&M.find(x=>x.n===i);
   if(mm&&typeof mm.onShow==='function'){try{mm.onShow()}catch(e){}}
   if(!tick&&i>0)startClock();
@@ -670,6 +718,17 @@ function wireRibbon(id,onCmd){
     menu.querySelectorAll('.submenu').forEach(x=>x.classList.remove('on'))});
 }
 
+/* 화면을 특정 위치로 옮긴다.
+   이 페이지에서는 behavior:'smooth' 가 조용히 무시되므로 즉시 이동으로 통일한다. */
+function pageTo(y){
+  const t=Math.max(0,Math.round(y));
+  try{window.scrollTo(0,t)}catch(e){}
+  if(Math.abs(window.scrollY-t)>2){                    // 혹시 막혔으면 문서 쪽으로 한 번 더
+    try{document.documentElement.scrollTop=t}catch(e){}
+    try{document.body.scrollTop=t}catch(e){}
+  }
+}
+
 /* ═══════════ 시트 ═══════════ */
 function colN(c){let n=0;for(const ch of c)n=n*26+(ch.charCodeAt(0)-64);return n}
 function nCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=(n-r-1)/26}return s}
@@ -704,17 +763,23 @@ class Sheet{
     if(i>=0&&i!==this.active){this.active=i; this.selRef=''; this._newpage=true;
       this._scroll=null; this.render();}
     return this;}
-  /* 시트를 화면 안으로 올린다 — 연습창이 접혀 있으면 노란 칸을 볼 수가 없다 */
+  /* 시트를 화면 안으로 올린다 — 연습창이 접혀 있으면 노란 칸을 볼 수가 없다.
+     범위 선택창이 떠 있으면 그 창에 가리지 않도록 위쪽 공간에 앉힌다. */
   reveal(){
     if(!this.host||this.destroyed)return;
     const r=this.host.getBoundingClientRect();
     const vh=window.innerHeight||document.documentElement.clientHeight||0;
     if(!vh)return;
-    if(r.top<70||r.bottom>vh-10){
-      const y=window.scrollY+r.top-Math.max(64,(vh-r.height)/2);
-      try{window.scrollTo({top:Math.max(0,y),behavior:'smooth'})}
-      catch(e){window.scrollTo(0,Math.max(0,y))}
-    }
+    let top=70, bot=vh-10;
+    const bx=document.querySelector('.mask.pick .dlg');
+    if(bx){ const br=bx.getBoundingClientRect();
+      /* 창이 위쪽에 있으면 그 아래를, 아래쪽에 있으면 그 위를 쓴다 */
+      if(br.top<vh/2)top=Math.max(top,br.bottom+12);
+      else bot=Math.min(bot,br.top-12); }
+    if(bot-top<r.height)top=Math.max(8,bot-r.height);   // 그래도 모자라면 위 여백을 줄인다
+    if(r.top>=top&&r.bottom<=bot)return;          // 이미 잘 보이면 그대로 둔다
+    const y=window.scrollY+r.top-Math.max(top,(top+bot-r.height)/2);
+    pageTo(y);
   }
   set(ref,v,page){const p=page?this.at(page):this.P; if(p)p.cells[ref]=v}
   get(ref,page){const p=page?this.at(page):this.P; return p?p.cells[ref]:undefined}
@@ -763,7 +828,7 @@ class Sheet{
       <div class="gridbar${this.pick?' picking':''}${this._await?' awaiting':''}">
         <span class="namebox" data-name>${this.selRef||''}</span>
         <span data-msg>${esc(this.hint||'')}</span>
-        ${this.pick?'<span class="pk">여기서 끌어 선택하세요 — 아래쪽으로 끌면 표가 따라 내려갑니다</span>':''}
+        ${this.pick?'<span class="pk">여기서 끌어 고르세요 · 다시 끌면 고쳐집니다 · 다 고르면 창의 [확인]</span>':''}
         ${(this.pick||this._await)?'<button class="quit" data-quit>그만두기 (Esc)</button>':''}
       </div>
       ${this.P.note?`<div class="sheetnote">📌 ${esc(this.P.note)}</div>`:''}
@@ -778,14 +843,14 @@ class Sheet{
     this.wireEdit();
     const _q=this.host.querySelector('[data-quit]');
     if(_q)_q.onclick=e=>{e.stopPropagation();this.cancelPick()};
-    if(this.pick)this.wirePick();
+    if(this.pick){this.wirePick(); if(this.selRef)this.paintRef(this.selRef);}
   }
   wireTabs(){
     this.host.querySelectorAll('.xltabs span[data-tab]').forEach(el=>{
       el.onclick=()=>{
         const t=el.dataset.tab;
         if(this.idxOf(t)<0){toast('이 연습창에서는 이 시트 내용까지는 담지 않았습니다');return}
-        if(this.pick){toast('먼저 범위 선택을 끝내 주세요');return}
+        if(this.pick){toast('이번 실습은 이 시트에서 고릅니다. 범위를 고르고 창의 [확인]을 누르세요');return}
         if(this._await){toast('먼저 노란 칸을 채우고 Enter 를 누르세요. 그만두려면 Esc');return}
         this.show(t);
       };});
@@ -909,8 +974,21 @@ class Sheet{
     this._scroll={t:g.scrollTop,l:g.scrollLeft};
   }
   startPick(cb,hint){this.pick=cb;this.hint=hint||'셀을 드래그해서 고르세요';this.render()}
+  /* 참조 문자열(A1 또는 A1:C9)대로 시트에 선택 표시를 칠한다 */
+  paintRef(ref){
+    const p=parseRef(String(ref||'').toUpperCase()); if(!p)return;
+    const tb=this.host&&this.host.querySelector('table.g'); if(!tb)return;
+    tb.querySelectorAll('td.sel').forEach(t=>t.classList.remove('sel'));
+    for(let r=Math.min(p.r1,p.r2);r<=Math.max(p.r1,p.r2);r++)
+      for(let c=Math.min(p.c1,p.c2);c<=Math.max(p.c1,p.c2);c++){
+        const td=tb.querySelector('[data-ref="'+nCol(c)+r+'"]'); if(td)td.classList.add('sel');}
+    this.selRef=String(ref).toUpperCase();
+    const nb=this.host.querySelector('[data-name]'); if(nb)nb.textContent=this.selRef;
+  }
   stopPick(){this.pick=null;this.hint='';this.render()}
   cancelPick(){ if(this._stopEdge)this._stopEdge();
+    /* 범위 선택창이 떠 있으면 창까지 함께 닫는다 (시트만 죽는 일이 없게) */
+    if(this.pickLive&&typeof cancelRangeBox==='function'){cancelRangeBox();this.cancelEdit();return}
     if(this.pick){const cb=this.pick;this.pick=null;this.hint='';cb(null);}
     this.cancelEdit(); }
   wirePick(){
@@ -924,11 +1002,15 @@ class Sheet{
       for(let r=p.r1;r<=p.r2;r++)for(let c=p.c1;c<=p.c2;c++){
         const td=tb.querySelector(`[data-ref="${nCol(c)+r}"]`); if(td)td.classList.add('sel');}
       const ref=nCol(p.c1)+p.r1+((p.c1===p.c2&&p.r1===p.r2)?'':':'+nCol(p.c2)+p.r2);
-      if(nb)nb.textContent=ref; this.selRef=ref; return ref;
+      if(nb)nb.textContent=ref; this.selRef=ref;
+      if(this.onPickChange)try{this.onPickChange(ref)}catch(e){}   // 끄는 동안 창에 실시간 표시
+      return ref;
     };
     const rc=td=>{const m=/^([A-Z]+)(\d+)$/.exec(td.dataset.ref);return {c:colN(m[1]),r:+m[2]}};
     const cellAt=(x,y)=>{
       const el=doc.elementFromPoint(x,y);
+      /* 떠 있는 창 위를 지나갈 때는 가까운 셀로 튀지 않고 직전 선택을 유지한다 */
+      if(el&&el.closest&&el.closest('.dlg'))return null;
       const hit=el&&el.closest?el.closest('td[data-ref]'):null;
       if(hit)return hit;
       // 창 밖으로 끌었을 때는 좌표로 가장 가까운 셀을 찾는다
@@ -955,6 +1037,9 @@ class Sheet{
       if(edge){clearInterval(edge);edge=null}
       const cb=this.pick; if(!cb)return;
       this._scroll=g?{t:g.scrollTop,l:g.scrollLeft}:this._scroll;
+      /* 실제 엑셀은 손을 떼도 확정되지 않는다. 창의 칸에 채워질 뿐이고
+         [확인]을 눌러야 넘어간다. 다시 끌어 고쳐도 된다. */
+      if(this.pickLive){ if(this.onPickChange)try{this.onPickChange(this.selRef)}catch(e){} return; }
       this.stopPick(); cb(this.selRef); };
     tb.addEventListener('pointerdown',e=>{
       const td=e.target.closest&&e.target.closest('td[data-ref]'); if(!td)return;
@@ -979,7 +1064,13 @@ const mask=()=>document.getElementById('mask');
 const dbox=()=>document.getElementById('dlgbox');
 let escFn=null;
 function armEsc(fn){escFn=fn}
-function closeDlg(){mask().classList.remove('on');dbox().innerHTML='';escFn=null}
+function closeDlg(){
+  const mk=mask();
+  mk.classList.remove('on','pick');
+  const bx=dbox();
+  bx.style.left=bx.style.top=bx.style.right=bx.style.bottom='';
+  bx.innerHTML=''; escFn=null;
+}
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&escFn){const f=escFn;closeDlg();f()}});
 
@@ -992,6 +1083,7 @@ function msgbox(o){ // {title,text,icon,buttons:[[label,val,isDef]],hint,err}
         ${o.sq?`<span class="sq">${esc(o.sq)}</span>`:''}</div>`:''}
       <div class="tt"><span>${esc(o.title||'')}</span><button class="x" data-close>✕</button></div>
       <div class="bd"><span class="ic">${o.icon||'ℹ️'}</span>${esc(o.text||'')}</div>
+      ${o.real?`<div class="realnote"><b>연습창에서만 다릅니다</b> — ${esc(o.real)}</div>`:''}
       ${o.err?`<div class="err">${esc(o.err)}</div>`:''}
       ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
       <div class="bt">${bts}</div>
@@ -1002,6 +1094,114 @@ function msgbox(o){ // {title,text,icon,buttons:[[label,val,isDef]],hint,err}
     armEsc(()=>res(null));
   });
 }
+/* 범위 선택 창 — Application.InputBox(..., Type:=8) 을 그대로 흉내 낸다.
+   창이 떠 있는 동안 시트를 드래그할 수 있고, 고른 참조가 아래 칸에 실시간으로 채워진다.
+   [확인]을 눌러야 확정된다. */
+let RANGEBOX=null;
+function cancelRangeBox(){ if(RANGEBOX)RANGEBOX(null); }
+function rangebox(o){
+  return new Promise(res=>{
+    const sh=o.sheet;
+    let done=false;
+    const finish=v=>{
+      if(done)return; done=true;
+      RANGEBOX=null; escFn=null;
+      dbox().style.left=dbox().style.top=dbox().style.right=dbox().style.bottom='';
+      sh.pickLive=false; sh.onPickChange=null;
+      if(sh.pick){sh.pick=null; sh.hint=''; if(!sh.destroyed)sh.render();}
+      mask().classList.remove('pick');
+      closeDlg();
+      res(v);
+    };
+    RANGEBOX=finish;
+
+    dbox().innerHTML=`<div class="dlg rbox">
+      ${(o.step||WIZBADGE)?`<div class="wizstep"><span>${esc(o.step||WIZBADGE)}</span></div>`:''}
+      <div class="tt"><span>${esc(o.title||'범위 선택')}</span><button class="x" data-close>✕</button></div>
+      <div class="bd">${esc(o.text||'')}</div>
+      <div class="rref"><label>선택한 범위</label>
+        <input class="rin" id="rangein" value="${esc(o.def||'')}" spellcheck="false" autocomplete="off">
+        <button class="fold" data-fold title="창을 줄여 가려진 칸을 고를 수 있게 합니다">접기</button></div>
+      ${o.real?`<div class="realnote"><b>연습창에서만 다릅니다</b> — ${esc(o.real)}</div>`:''}
+      ${o.err?`<div class="err">${esc(o.err)}</div>`:''}
+      ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
+      <div class="bt"><button data-v="ok" class="def">확인</button><button data-v="c">취소</button></div>
+    </div>`;
+    mask().classList.add('on','pick');
+
+    const inp=document.getElementById('rangein');
+    const box=dbox().querySelector('.dlg');
+
+    /* 시트를 만질 수 있게 열어 두고, 끌 때마다 칸에 채운다 */
+    sh.pickLive=true;
+    sh.onPickChange=ref=>{ if(inp)inp.value=ref; };
+    sh.startPick(()=>{}, o.bar||'창이 떠 있는 채로 시트를 끌어 범위를 고르세요 — 다 고르면 [확인]');
+    if(o.def)sh.paintRef(o.def);          // 다시 뜬 것이면 방금 고른 자리를 되살린다
+    sh.reveal();
+
+    /* 제목 줄을 잡아 옮길 수 있게 (실제 엑셀 창도 옮길 수 있습니다) */
+    const tt=box.querySelector('.tt');
+    let dx=0,dy=0,moving=false;
+    tt.addEventListener('pointerdown',e=>{
+      if(e.target.closest('[data-close]'))return;
+      const r=box.getBoundingClientRect();
+      dx=e.clientX-r.left; dy=e.clientY-r.top; moving=true;
+      dbox().style.right='auto'; dbox().style.bottom='auto'; dbox().style.left=r.left+'px';
+      dbox().style.top=r.top+'px';
+      try{tt.setPointerCapture(e.pointerId)}catch(x){}
+    });
+    tt.addEventListener('pointermove',e=>{
+      if(!moving)return;
+      const w=box.offsetWidth,h=box.offsetHeight;
+      const x=Math.min(Math.max(0,e.clientX-dx),Math.max(0,innerWidth-w));
+      const y=Math.min(Math.max(0,e.clientY-dy),Math.max(0,innerHeight-h));
+      dbox().style.left=x+'px'; dbox().style.top=y+'px';
+    });
+    tt.addEventListener('pointerup',e=>{moving=false;
+      try{tt.releasePointerCapture(e.pointerId)}catch(x){}});
+
+    const showErr=msg=>{                       // 창을 그대로 둔 채 까닭만 갈아 끼운다
+      let e=box.querySelector('.err');
+      if(!e){e=document.createElement('div');e.className='err';
+        box.querySelector('.rref').insertAdjacentElement('afterend',e);}
+      e.textContent=msg;
+    };
+    /* 접기 — 실제 엑셀 범위 선택창에도 있는 기능입니다 */
+    const fold=box.querySelector('[data-fold]');
+    const setMini=on=>{
+      box.classList.toggle('mini',!!on);
+      fold.textContent=on?'펼치기':'접기';
+      fold.title=on?'창을 다시 펼쳐 설명을 봅니다':'창을 줄여 가려진 칸을 고를 수 있게 합니다';
+      if(!sh.destroyed)sh.reveal();
+    };
+    fold.onclick=()=>setMini(!box.classList.contains('mini'));
+    /* 화면이 좁아 표와 창이 함께 들어가지 않으면 처음부터 접어 둔다 */
+    setTimeout(()=>{
+      if(sh.destroyed||!sh.host)return;
+      const need=sh.host.offsetHeight+box.offsetHeight+96;
+      if(need>window.innerHeight)setMini(true); else sh.reveal();
+    },30);
+
+    const ok=()=>{
+      const v=(inp.value||'').trim().toUpperCase();
+      if(!v){ showErr('참조가 잘못되었습니다. 시트에서 범위를 끌어 고르거나 A1 처럼 적어 주세요.');
+        inp.focus(); return; }
+      if(!parseRef(v)){ showErr('참조가 잘못되었습니다. A1 또는 A1:C9 모양으로 적어 주세요.');
+        inp.select(); return; }
+      finish(v);
+    };
+    dbox().querySelectorAll('.bt button').forEach(b=>b.onclick=()=>{
+      if(b.dataset.v==='ok')ok(); else finish(null);});
+    dbox().querySelector('[data-close]').onclick=()=>finish(null);
+    inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();ok()} };
+    /* 적어 넣는 대로 시트에도 칠해 준다 — 키보드만으로도 진행할 수 있게 */
+    inp.oninput=()=>{ const v=(inp.value||'').trim().toUpperCase();
+      if(parseRef(v)&&!sh.destroyed)sh.paintRef(v); };
+    setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){inp.focus()} inp.select()},60);
+    armEsc(()=>finish(null));
+  });
+}
+
 function inputbox(o){ // {title,text,def,hint,err,type}
   return new Promise(res=>{
     const field=o.big
@@ -1012,6 +1212,7 @@ function inputbox(o){ // {title,text,def,hint,err,type}
         ${o.sq?`<span class="sq">${esc(o.sq)}</span>`:''}</div>`:''}
       <div class="tt"><span>${esc(o.title||'')}</span><button class="x" data-close>✕</button></div>
       <div class="bd">${esc(o.text||'')}${field}</div>
+      ${o.real?`<div class="realnote"><b>연습창에서만 다릅니다</b> — ${esc(o.real)}</div>`:''}
       ${o.err?`<div class="err">${esc(o.err)}</div>`:''}
       ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
       <div class="bt"><button data-v="ok" class="def">확인</button><button data-v="">취소</button></div>
@@ -1098,6 +1299,7 @@ function promptform(o){ // {correct}
         <button data-a="x">파일로 내보내기</button>
         <button data-a="x">파일로 가져오기</button>
       </div></div>
+      ${o.real?`<div class="realnote"><b>연습창에서만 다릅니다</b> — ${esc(o.real)}</div>`:''}
       ${o.hint?`<div class="hint">💡 ${esc(o.hint)}</div>`:''}
     </div>`;
     mask().classList.add('on');
@@ -1145,10 +1347,7 @@ function waitMenu(m,cmd,bar){
     const rib=document.getElementById('rib'+m.n);
     if(rib){
       const r=rib.getBoundingClientRect(), vh=window.innerHeight||0;
-      if(vh&&(r.top<70||r.top>vh-170)){
-        const y=Math.max(0,window.scrollY+r.top-90);
-        try{window.scrollTo({top:y,behavior:'smooth'})}catch(e){window.scrollTo(0,y)}
-      }
+      if(vh&&(r.top<70||r.top>vh-170))pageTo(window.scrollY+r.top-90);
     }
     toast('리본의 [DRM AI v10.0] → [일반 기능] → [ '+cmd+' ] 를 눌러 주세요');
     MENUWAIT={n:m.n,cmd:cmd,cb:v=>{
@@ -1183,43 +1382,43 @@ async function runWizard(steps,ctx){
       const TXT=(err&&s.retry)?((typeof s.retry==='function')?s.retry(ctx):s.retry):TXT0;
       const HNT=(typeof s.hint==='function')?s.hint(ctx):s.hint;
       if(s.type==='msg'){
-        v=await msgbox({title:s.title,text:TXT,icon:s.icon,buttons:s.buttons,hint:HNT,err,step:STEP,sq:s.sq});
+        v=await msgbox({title:s.title,text:TXT,icon:s.icon,buttons:s.buttons,hint:HNT,err,step:STEP,sq:s.sq,real:s.real});
       }else if(s.type==='input'){
         v=await inputbox({title:s.title,text:TXT,
-          def:(err&&last!==null)?last:(s.def||''),hint:HNT,err,step:STEP,
+          def:(err&&last!==null)?last:(s.def||''),hint:HNT,err,step:STEP,real:s.real,
           big:(s.big||String(s.def||'').length>60)});
       }else if(s.type==='pick'){
-        g=await msgbox({title:s.title,text:TXT,icon:'🖱️',buttons:[['확인',1,1]],err,step:STEP,
-          hint:(err?'다시 골라 주세요. ':'')+ (HNT||'')});
-        if(g===null){toast('취소했습니다');return 'CANCEL'}
         if(ctx.sheet.destroyed)return 'CANCEL';
-        v=await new Promise(r=>{ctx.sheet.startPick(r,s.title+' — '+(s.want||''))});
+        v=await rangebox({title:s.title,text:TXT,err,step:STEP,sheet:ctx.sheet,def:(err?last:''),real:s.real,
+          bar:(s.bar||('창이 떠 있는 채로 시트를 끌어 고르세요'
+               +(s.want?(' — 고를 곳 : '+s.want):'')+' — 다 고르면 창의 [확인]')),
+          hint:(err?'다시 골라 주세요. ':'')+ (HNT||'')});
       }else if(s.type==='tab'){
         ctx.sheet.show(s.page);
         ctx.sheet.hint=s.bar||('[ '+s.page+' ] 시트로 넘어왔습니다');
         ctx.sheet.render(); ctx.sheet.reveal();
-        g=await msgbox({title:s.title,text:TXT,icon:'🗂️',buttons:[['확인','ok',1]],err,step:STEP,hint:HNT});
+        g=await msgbox({title:s.title,text:TXT,icon:'🗂️',buttons:[['확인','ok',1]],err,step:STEP,hint:HNT,real:s.real});
         if(g===null){toast('취소했습니다');return 'CANCEL'}
         ctx.sheet.reveal(); v=ctx.sheet.name;
       }else if(s.type==='edit'){
-        g=await msgbox({title:s.title,text:TXT,icon:'✎',buttons:[['확인','ok',1]],err,step:STEP,
+        g=await msgbox({title:s.title,text:TXT,icon:'✎',buttons:[['확인','ok',1]],err,step:STEP,real:s.real,
           hint:(err?'다시 적어 주세요. ':'')+(HNT||'')});
         if(g===null){toast('취소했습니다');return 'CANCEL'}
         if(ctx.sheet.destroyed)return 'CANCEL';
         v=await new Promise(r=>{ctx.sheet.awaitEdit(s.page,s.ref,r,s.bar)});
       }else if(s.type==='menu'){
-        g=await msgbox({title:s.title,text:TXT,icon:'🖱️',buttons:[['확인','ok',1]],err,step:STEP,
+        g=await msgbox({title:s.title,text:TXT,icon:'🖱️',buttons:[['확인','ok',1]],err,step:STEP,real:s.real,
           hint:(err?'다시 눌러 주세요. ':'')+(HNT||'')});
         if(g===null){toast('취소했습니다');return 'CANCEL'}
         v=await waitMenu(ctx.m,s.cmd,s.bar);
       }else if(s.type==='form'){
-        v=await promptform({correct:s.pre,decoy:s.decoy,hint:HNT});
+        v=await promptform({correct:s.pre,decoy:s.decoy,hint:HNT,real:s.real});
       }
       if(v===null||v===''&&s.type!=='input'){ if(s.optional){return 'CANCEL'} }
       if(v===null){ toast('취소했습니다. 실제 기능도 여기서 끝납니다'); return 'CANCEL'; }
       if(v==='c'&&s.type==='msg'&&(s.buttons||[]).some(b=>b[1]==='c')){
         toast('[취소] 를 골랐습니다. 실제 기능도 여기서 종료됩니다'); return 'CANCEL'; }
-      if(s.type==='input'||s.type==='edit')last=v;
+      if(s.type==='input'||s.type==='edit'||s.type==='pick')last=v;
       const bad=s.check?s.check(v,ctx):null;
       if(!bad){ if(s.store)ctx[s.store]=v; if(s.after)await s.after(v,ctx); break; }
       err=bad;
@@ -1384,7 +1583,7 @@ M.push({n:1,title:'행 단위 병렬 처리 — 12명 생기부 문구를 한 �
   {type:'act',run:async ctx=>{
     await runRows(ctx.sheet,RES1.map((v,i)=>['E'+(i+2),v]),
       'Gemini 병렬처리 - 파이썬 병렬 처리 실행 중 (시간이 걸릴 수 있습니다)...','Gemini 병렬처리 - 처리 완료');
-    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],
+    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],real:'실제로는 AI 서버를 부르므로 몇십 초에서 몇 분이 걸리고, 요금도 그만큼 나갑니다. 결과 문장도 돌릴 때마다 조금씩 달라집니다. 연습창은 미리 준비한 예시를 바로 채워 넣습니다.',
       text:'병렬 처리 완료!\n\n총 행 수: 12  ·  성공 12 / 실패 0\n모델: gemini-3.7-flash\n토큰: 입력 3,842 / 출력 2,106\n예상 비용(USD): $0.010779\n\n[로그 확인] C:\\MyTrustedFiles\\python_output.log\n  \'[크기초과]\', \'[첨부안됨]\' 메시지가 있으면\n  해당 파일이 전송되지 않은 것입니다.',
       hint:'실제 화면에서는 여기서 [사용 내역 내보내기]로 누적 금액을 볼 수 있습니다.'});
   }}],
@@ -1478,11 +1677,14 @@ M.push({n:2,title:'정리하고 나누기 — 마크다운 지우기 · 한 칸�
     await runRows(ctx.sheet,MD.map((_,i)=>['D'+(i+2),CLN2(i)]),'마크다운 기호 제거 중입니다. 잠시만 기다려 주세요...','마크다운 정리 완료');
     await msgbox({title:'마크다운 정리',icon:'✅',buttons:[['확인','ok',1]],
       text:'완료!\n\n총 셀 수: 12\n변경된 셀: 12\n변경되지 않은 셀: 0'});
-    toast('이제 분할 기록기로 세 칸으로 나눕니다');
   }},
+  {type:'menu',cmd:'셀 내용 행 단위 분할 기록기',title:'여기서 기능이 끝났습니다',icon:'🔁',
+   text:'마크다운 정리는 여기까지입니다. 창이 모두 사라졌습니다.\n\n한 칸을 세 칸으로 나누는 것은 다른 기능입니다.\n리본에서 한 번 더 눌러 주세요.\n\n  [DRM AI v10.0] → [일반 기능] → [셀 내용 행 단위 분할 기록기]',
+   hint:'기능 하나가 끝나면 창이 저절로 이어지지 않습니다. 다음 기능은 늘 리본에서 새로 시작합니다.',
+   bar:'리본에서 [ 셀 내용 행 단위 분할 기록기 ] 를 눌러 주세요 — 그만두려면 Esc'},
   {type:'pick',title:'범위 선택',want:'D2:D13',
    text:'처리할 셀 또는 범위를 선택한 후 확인을 클릭하세요:\n(단일 셀 또는 여러 행을 선택할 수 있습니다)',
-   hint:'D2 부터 D13 까지 다시 한 번 끌어 선택하세요. 기능을 새로 실행하면 선택은 초기화됩니다.',
+   hint:'D2 부터 D13 까지 다시 한 번 끌어 고르세요. 기능을 새로 실행하면 선택이 풀립니다.',
    check:v=>v==='D2:D13'?null:'D2:D13 을 고르세요.'},
   {type:'msg',title:'Microsoft Excel',icon:'❓',buttons:[['예','y',1],['아니오','n']],
    text:'기본 분할 기준을 사용하시겠습니까?\n\n  교정된 문장:\n  수정 요약:\n  교정 원칙 반영:\n\n(아니오 선택 시 사용자 정의 기준을 입력할 수 있습니다)',
@@ -1739,6 +1941,7 @@ function MAIL3(ctx){return [
     sh.setStatus('준비');
   }},
   {type:'msg',title:'메일 자동 발송',icon:'✅',buttons:[['확인','ok',1]],sq:'두 번째 실행',
+   real:'실제로는 이 창이 뜨기 전에 메일이 이미 나갔습니다. 미리보기도, 취소도 없습니다. 연습창에서는 한 통도 나가지 않습니다.',
    text:'메일 자동 발송 완료\n\n성공: 3건\n실패: 0건',
    hint:'실패가 있어도 이 창은 똑같이 뜹니다. 다른 점은 \'실패: N건\' 이라는 숫자뿐이니 그 숫자를 꼭 보세요.'},
   {type:'msg',title:'발송 결과 시트 읽는 법',icon:'🗂️',buttons:[['확인','ok',1]],
@@ -1788,7 +1991,8 @@ M.push({n:3,title:'파일과 메일 — 이름 12개 한 번에, 개별 메일 �
    hint:'[아니오]를 골라 폴더를 눈으로 고르는 쪽이 실수가 적습니다.',
    check:v=>v==='n'?null:'직접 입력은 오타가 나기 쉽습니다. [아니오]로 골라 보세요.'},
   {type:'msg',title:'폴더 선택',icon:'📁',buttons:[['확인','ok',1]],
-   text:'선택한 폴더:\n'+DIR+'\n\n(연습창에서는 이 폴더가 이미 골라진 것으로 합니다)'},
+   text:'선택한 폴더:\n'+DIR,
+   real:'실제로는 윈도우 [폴더 찾아보기] 창이 뜹니다. 그 창에서 폴더를 하나하나 눌러 들어가 고르고 [확인]을 눌러야 합니다. 연습창에서는 이미 골라 둔 것으로 하고 넘어갑니다.'},
   {type:'pick',title:'출력 위치 선택',want:'A2',
    text:'파일 목록을 입력할 시작 셀을 선택하세요:\n(파일 목록은 선택한 셀부터 아래쪽으로 입력됩니다)',
    hint:'1행은 제목 줄이니 A2 를 클릭하세요.',
@@ -1803,7 +2007,11 @@ M.push({n:3,title:'파일과 메일 — 이름 12개 한 번에, 개별 메일 �
   {type:'msg',title:'Microsoft Excel',icon:'✅',buttons:[['확인','ok',1]],
    text:'총 12개의 파일 목록을 입력했습니다.\n(하이퍼링크 적용: 클릭하면 해당 파일이 열립니다)',
    hint:'스캔_0001 부터 0012 까지 순서가 뒤섞이지 않았습니다. 사람이 읽는 순서(자연 정렬)로 들어옵니다.'},
-  {type:'msg',title:'파일명 변경 안내',icon:'ℹ️',buttons:[['예','y',1],['아니오','n']],
+  {type:'menu',cmd:'파일 경로로 파일명 변경',title:'여기서 기능이 끝났습니다',icon:'🔁',
+   text:'파일 목록 가져오기는 여기까지입니다. 창이 모두 사라졌습니다.\n\n이름을 바꾸는 것은 다른 기능입니다. 리본에서 한 번 더 눌러 주세요.\n\n  [DRM AI v10.0] → [일반 기능] → [파일 경로로 파일명 변경]',
+   hint:'A열에 경로가 들어왔는지 먼저 눈으로 확인하고 누르세요.',
+   bar:'리본에서 [ 파일 경로로 파일명 변경 ] 을 눌러 주세요 — 그만두려면 Esc'},
+  {type:'msg',title:'파일명 변경 안내',icon:'❓',buttons:[['예','y',1],['아니오','n']],
    text:'파일 경로로 파일명 변경 기능\n\n사용법:\n1단계: 파일 경로가 있는 범위 선택 (예: A1:A10)\n2단계: 새 파일명이 있는 열 입력 (예: B)\n3단계: 새 경로 출력할 열 입력 (예: C)\n\n팁: 새 파일명에 확장자가 있어도 자동으로 처리됩니다\n   - 확장자 없음: \'새문서\' → \'새문서.txt\'\n   - 확장자 있음: \'새문서.pdf\' → \'새문서.txt\' (원본 확장자 유지)\n\n계속 진행하시겠습니까?',
    check:v=>v==='y'?null:'[예]를 눌러 진행합니다.'},
   {type:'pick',title:'1단계: 파일 경로 범위 선택',want:'A2:A13',
@@ -1832,6 +2040,7 @@ M.push({n:3,title:'파일과 메일 — 이름 12개 한 번에, 개별 메일 �
   }},
   {type:'msg',title:'작업 완료',icon:'✅',buttons:[['확인','ok',1]],
    text:'파일명 변경 완료!\n\n작업 결과:\n[성공] 12개\n[실패] 0개\n[총처리] 12개\n\n참고: 새 파일 경로는 $C$2:$C$13 에서 확인하세요!',
+   real:'실제로는 이때 폴더 안 진짜 파일 12개의 이름이 바뀝니다. 되돌리기(Ctrl+Z)로는 돌아오지 않습니다. 연습창에서는 아무 파일도 건드리지 않습니다.',
    hint:'C열에 새 경로가 들어왔습니다. 이 순간 폴더 안의 진짜 파일 이름도 함께 바뀐 것입니다.'},
 ].concat(MAIL3(ctx))},
  {label:'② 발송이 실패하면 어떻게 보이나',short:'② 실패 읽기',steps:ctx=>[
@@ -1983,9 +2192,15 @@ M.push({n:4,title:'절약 모드 — 같은 일을 반값에',mins:'7분  (심�
       text:'Gemini 배치 작업을 제출했습니다.\n\n작업 ID: 20260825_143012_gemini_qkzm\n처리 행 수: 30행\n\n- 업로드와 처리는 백그라운드에서 진행됩니다.\n- Excel을 계속 사용하거나 종료해도 됩니다.\n- 진행 상황: [배치 상태 확인] 메뉴 또는 아래 로그\n  C:\\MyTrustedFiles\\BatchJobs\\20260825_143012_gemini_qkzm\\job.log\n- 완료 시 결과 파일 위치:\n  C:\\MyTrustedFiles\\BatchResults',
       hint:'여기서 엑셀을 닫아도 됩니다. 이제 상태 확인을 해 봅시다.'});
   }},
+  {type:'menu',cmd:'배치 처리 상태 확인 / 결과 받기',title:'여기서 기능이 끝났습니다',icon:'⏳',
+   text:'제출은 여기까지입니다. 창이 모두 사라지고 엑셀은 평소로 돌아갑니다.\n\n이제 엑셀을 닫으셔도 되고, 컴퓨터를 꺼도 됩니다.\n몇 시간 뒤에 리본에서 결과를 받으러 오시면 됩니다.\n\n  [DRM AI v10.0] → [일반 기능] → [배치 처리 상태 확인 / 결과 받기]',
+   hint:'이것이 절약 모드의 핵심입니다. 기다리는 동안 컴퓨터가 놀아도 됩니다.',
+   real:'실제로는 여기서 몇 시간(최대 24~48시간)을 기다립니다. 연습창은 바로 눌러 볼 수 있게 해 두었습니다.',
+   bar:'리본에서 [ 배치 처리 상태 확인 / 결과 받기 ] 를 눌러 주세요 — 그만두려면 Esc'},
   {type:'msg',title:'배치 상태 확인',icon:'⏳',buttons:[['확인','ok',1]],
    text:'진행 중 1건 / 완료 0건 / 실패·만료 0건\n----------------------------------------------\n[처리 중(8/30)] 20260825_143012_gemini_qkzm  (30행, Gemini)\n\n결과 폴더: C:\\MyTrustedFiles\\BatchResults\n누적 0 MB\n디스크 여유: 250 GB',
-   hint:'아직 도는 중입니다. 실제로는 몇 시간 뒤 다시 누릅니다. (연습창은 바로 넘어갑니다)'},
+   hint:'아직 도는 중입니다. 이럴 때는 창을 닫고 나중에 한 번 더 누르시면 됩니다.',
+   real:'실제로는 아직 안 끝났으면 여기서 끝입니다. 나중에 [배치 처리 상태 확인] 을 다시 눌러야 합니다. 연습창은 바로 다음으로 넘어갑니다.'},
   {type:'msg',title:'배치 상태 확인',icon:'✅',buttons:[['예','y',1],['아니오','n']],
    text:'진행 중 0건 / 완료 1건 / 실패·만료 0건\n----------------------------------------------\n[완료] 20260825_143012_gemini_qkzm  (30행, Gemini)\n\n결과 폴더: C:\\MyTrustedFiles\\BatchResults\n누적 42 KB (결과 42 KB)\n디스크 여유: 250 GB\n\n결과 폴더를 지금 여시겠습니까?',
    hint:'[예]를 누르면 탐색기가 열립니다.'},
@@ -2135,7 +2350,7 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
    text:'프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 직접 \'셀 범위 선택\'으로 진행\n[아니오] \'프롬프트 관리 폼\'에서 선택\n[취소] 작업 중단',
    hint:'이번에는 이미 들어 있는 프롬프트를 씁니다. [아니오]를 고르세요.',
    check:v=>v==='n'?null:'출제 프롬프트가 추가기능에 이미 들어 있습니다. [아니오]로 프롬프트 관리 폼을 열어 보세요.'},
-  {type:'form',pre:'문제 제작_5지 선다형_추가프롬프트',decoy:'문제 제작_5지 선다형_전과목',
+  {type:'form',real:'실제 [프롬프트 관리] 창은 열릴 때 목록도 본문도 비어 있습니다. 목록에서 하나를 고르면 본문이 채워지고, 그 자리에서 본문을 고쳐 쓴 뒤 보낼 수도 있습니다. 연습창은 고를 것만 미리 띄워 두고 본문은 읽기만 되게 했습니다.',pre:'문제 제작_5지 선다형_추가프롬프트',decoy:'문제 제작_5지 선다형_전과목',
    hint:'목록에서 [문제 제작_5지 선다형_추가프롬프트] 를 고르고 [Prompt 사용하기] 를 누르세요. 왼쪽 아래 상자에서 내용을 읽어 볼 수 있습니다.',
    check:v=>v==='문제 제작_5지 선다형_추가프롬프트'?null:'5지 선다형 문항을 만들 것이므로 [문제 제작_5지 선다형_추가프롬프트] 를 고르세요. (지금 고른 것: '+v+')'},
   {type:'pick',title:'데이터 범위 선택',want:'B2:B16',
@@ -2154,7 +2369,7 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
   {type:'act',run:async ctx=>{
     await runRows(ctx.sheet,R5.map((v,i)=>['G'+(i+2),v]),
       'Gemini 병렬처리 - 파이썬 병렬 처리 실행 중 (시간이 걸릴 수 있습니다)...','문항 15개 생성 완료');
-    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],
+    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],real:'실제로는 AI 서버를 부르므로 몇십 초에서 몇 분이 걸리고, 요금도 그만큼 나갑니다. 결과 문장도 돌릴 때마다 조금씩 달라집니다. 연습창은 미리 준비한 예시를 바로 채워 넣습니다.',
       text:'병렬 처리 완료!\n\n총 행 수: 15  ·  성공 15 / 실패 0\n모델: gemini-3.7-flash\n토큰: 입력 18,240 / 출력 22,860\n예상 비용(USD): $0.099420',
       hint:'연습창은 문항을 줄여 보여 줍니다. 실제로는 자료·선택지·풀이가 모두 한 칸에 들어옵니다.'});
   }}]},
@@ -2178,6 +2393,7 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
    text:'한글 파일로 보낼 각 행 앞에 숫자 연번을 적용하시겠습니까?\n예: 1. 첫 번째 행 내용',
    hint:'1. 2. 3. … 문항 번호가 자동으로 붙습니다. [예].'},
   {type:'msg',title:'한글 파일을 저장할 폴더를 선택하세요',icon:'📁',buttons:[['확인','ok',1]],
+   real:'실제로는 윈도우 [폴더 찾아보기] 창이 뜹니다. 그 창에서 폴더를 하나하나 눌러 들어가 고르고 [확인]을 눌러야 합니다. 연습창에서는 이미 골라 둔 것으로 하고 넘어갑니다.',
    text:'선택한 폴더:\nD:\\2026_평가\\2학기 기말\\'},
   {type:'input',title:'한글 파일명 입력',def:'한글_파일_20260825_190455',
    text:'생성할 한글 파일명을 입력하세요.\n확장자를 생략하면 .hwp로 저장합니다.',
@@ -2212,7 +2428,7 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
    buttons:[['예','y'],['아니오','n',1],['취소','c']],
    text:'기본 프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 셀 범위 선택\n[아니오] 프롬프트 입력창에서 선택\n[취소] 기본 프롬프트 없이 진행',
    check:v=>v==='n'?null:'이미 들어 있는 프롬프트를 씁니다. [아니오].'},
-  {type:'form',pre:'문제 제작_문제로 이미지 만들기',decoy:'그림책만들기',
+  {type:'form',real:'실제 [프롬프트 관리] 창은 열릴 때 목록도 본문도 비어 있습니다. 목록에서 하나를 고르면 본문이 채워지고, 그 자리에서 본문을 고쳐 쓴 뒤 보낼 수도 있습니다. 연습창은 고를 것만 미리 띄워 두고 본문은 읽기만 되게 했습니다.',pre:'문제 제작_문제로 이미지 만들기',decoy:'그림책만들기',
    hint:'[문제 제작_문제로 이미지 만들기] 를 고르세요. 문항 안의 ## [그림 생성 프롬프트] 를 읽어 그림을 그려 줍니다.',
    check:v=>v==='문제 제작_문제로 이미지 만들기'?null:'[문제 제작_문제로 이미지 만들기] 를 고르세요.'},
   {type:'pick',title:'[설정 5/8] 이미지 프롬프트 범위 설정',want:'G6:G16 처럼 필요한 구간',
@@ -2239,6 +2455,7 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
     await runRows(ctx.sheet,list,'이미지 생성 중...','이미지 생성 완료');
     const cnt=to-from+1, usd=(cnt*0.067).toFixed(6), krw=Math.round(cnt*0.067*1380);
     await msgbox({title:'AI 사용 요약',icon:'🎨',buttons:[['확인','ok',1]],
+      real:'실제로는 그림 파일이 C:\\MyTrustedFiles\\이미지생성 폴더에 진짜로 만들어지고 요금이 나갑니다. 연습창에서는 경로만 적힙니다.',
       text:'=== Gemini 3.1 Flash Image (기본 권장) ===\n처리 완료: '+cnt+'개 행\n생성 성공: '+cnt+'장\n생성 실패: 0장\n선택 해상도: 1K\n선택 비율: 1:1\n선택 티어: 유료 1등급\n\n=== 비용 상세 (USD) ===\n전체 비용: $'+usd+'\n* 비용은 응답 usage 토큰 기준으로 기록\n  (입력 $0.50/1M, 출력 이미지 토큰 $60/1M)\n* 이미지당 환산 참고: 1K $0.067 / 2K $0.101 / 4K $0.151\n\n저장 위치: C:\\MyTrustedFiles\\이미지생성',
       hint:'잡은 '+cnt+'행 모두 그림이 만들어졌습니다. 약 '+krw.toLocaleString()+'원입니다. 문항 안에 \'없음\' 이라고 적혀 있어도 그 행까지 만듭니다. 이 실습의 15문항 중 그림이 필요한 것은 5개뿐이니, 실제로는 그 구간만 나눠서 돌리세요. H열에는 경로만 적히니 시트에서 보려면 [경로 이미지를 열 단위로 삽입] 을 쓰세요.'});
   }}]}],
@@ -2322,7 +2539,8 @@ M.push({n:6,title:'문항 점검 — 12문항 오류를 3분에',mins:'9분  (�
    text:'폴더 경로 입력 방식을 선택하세요:\n\n[예]: 폴더 경로를 직접 입력\n[아니오]: 대화상자에서 폴더를 클릭해서 선택',
    check:v=>v==='n'?null:'[아니오]로 폴더를 눈으로 고르세요.'},
   {type:'msg',title:'폴더 선택',icon:'📁',buttons:[['확인','ok',1]],
-   text:'선택한 폴더:\nD:\\2026_평가\\문항이미지\\연습용_가상시험지_2학년사회\\\n\n(1단계에서 만든 문항 이미지 12장이 들어 있습니다)'},
+   text:'선택한 폴더:\nD:\\2026_평가\\문항이미지\\연습용_가상시험지_2학년사회\\\n\n(1단계에서 만든 문항 이미지 12장이 들어 있습니다)',
+   real:'실제로는 윈도우 [폴더 찾아보기] 창이 뜹니다. 그 창에서 폴더를 하나하나 눌러 들어가 고르고 [확인]을 눌러야 합니다. 연습창에서는 이미 골라 둔 것으로 하고 넘어갑니다.'},
   {type:'pick',title:'출력 위치 선택',want:'B2',
    text:'파일 목록을 입력할 시작 셀을 선택하세요:\n(파일 목록은 선택한 셀부터 아래쪽으로 입력됩니다)',
    hint:'B2 를 클릭하세요.',
@@ -2335,6 +2553,11 @@ M.push({n:6,title:'문항 점검 — 12문항 오류를 3분에',mins:'9분  (�
       'D:\\2026_평가\\문항이미지\\문항_'+String(Math.floor(i/4)+1).padStart(3,'0')+'_'+String(i%4+1).padStart(3,'0')+'.png']);
     await runRows(ctx.sheet,L,'파일 목록 입력 중...','문항 12개 목록 입력 완료');
   }},
+  {type:'menu',cmd:'Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리',
+   title:'여기서 기능이 끝났습니다',icon:'🔁',
+   text:'파일 목록 가져오기는 여기까지입니다.\n\n이제 문항을 점검할 차례입니다. 이것은 다른 기능이라\n리본에서 새로 눌러야 합니다.\n\n  [DRM AI v10.0] → [Gemini 실행]\n  → [Gemini로 글과 파일(이미지, TXT, PDF, 음성 등) 행 단위 병렬 처리]',
+   hint:'이번에는 [일반 기능] 이 아니라 [Gemini 실행] 묶음입니다.',
+   bar:'리본에서 [ Gemini 실행 ] → [ 행 단위 병렬 처리 ] 를 눌러 주세요 — 그만두려면 Esc'},
   {type:'input',title:'동시 실행 수 설정',def:'10',store:'workers',
    text:'동시에 몇 개 행을 처리할까요?\n\n[gemini-3.7-flash - API 키 등급별 추천]\n  무료 키(결제 미연결)   8\n  Tier 1(결제 연결)   20\n\n입력 범위: 1~30',
    check:v=>{const n=+v;return (n>=1&&n<=30)?null:'1~30 사이 숫자를 넣으세요.'}},
@@ -2347,7 +2570,7 @@ M.push({n:6,title:'문항 점검 — 12문항 오류를 3분에',mins:'9분  (�
    buttons:[['예','y'],['아니오','n',1],['취소','c']],
    text:'프롬프트를 어떤 방식으로 가져올까요?\n\n[예] 엑셀 시트에서 직접 \'셀 범위 선택\'으로 진행\n[아니오] \'프롬프트 관리 폼\'에서 선택\n[취소] 작업 중단',
    check:v=>v==='n'?null:'점검 프롬프트가 이미 들어 있습니다. [아니오].'},
-  {type:'form',pre:'문제 제작_사회과정답과 풀이_오류 가능성표시',decoy:'문제 제작_사회과정답과 풀이',
+  {type:'form',real:'실제 [프롬프트 관리] 창은 열릴 때 목록도 본문도 비어 있습니다. 목록에서 하나를 고르면 본문이 채워지고, 그 자리에서 본문을 고쳐 쓴 뒤 보낼 수도 있습니다. 연습창은 고를 것만 미리 띄워 두고 본문은 읽기만 되게 했습니다.',pre:'문제 제작_사회과정답과 풀이_오류 가능성표시',decoy:'문제 제작_사회과정답과 풀이',
    hint:'[문제 제작_사회과정답과 풀이_오류 가능성표시] 를 고르세요. 이름 끝의 "오류 가능성표시"가 핵심입니다.',
    check:v=>v==='문제 제작_사회과정답과 풀이_오류 가능성표시'?null:
      '"오류 가능성표시" 가 붙은 쪽을 고르세요. 오류 여부를 맨 앞줄에 적어 주어 찾기 쉽습니다. (지금 고른 것: '+v+')'},
@@ -2367,10 +2590,14 @@ M.push({n:6,title:'문항 점검 — 12문항 오류를 3분에',mins:'9분  (�
   {type:'act',run:async ctx=>{
     await runRows(ctx.sheet,R6.map((v,i)=>['C'+(i+2),v]),
       'Gemini 병렬처리 - 파이썬 병렬 처리 실행 중 (시간이 걸릴 수 있습니다)...','문항 12개 점검 완료');
-    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],
+    await msgbox({title:'병렬 처리 완료',icon:'✅',buttons:[['확인','ok',1]],real:'실제로는 AI 서버를 부르므로 몇십 초에서 몇 분이 걸리고, 요금도 그만큼 나갑니다. 결과 문장도 돌릴 때마다 조금씩 달라집니다. 연습창은 미리 준비한 예시를 바로 채워 넣습니다.',
       text:'병렬 처리 완료!\n\n총 행 수: 12  ·  성공 12 / 실패 0\n모델: gemini-3.7-flash\n예상 비용(USD): $0.030615'});
     toast('이제 하이라이트로 문제 있는 문항만 찾아봅시다');
   }},
+  {type:'menu',cmd:'하이라이트 처리',title:'여기서 기능이 끝났습니다',icon:'🔁',
+   text:'점검은 끝났습니다. 그런데 12개를 다 읽으려면 한참 걸립니다.\n\n오류 가능성이 적힌 문항만 눈에 띄게 만들어 봅시다.\n이것도 다른 기능이라 리본에서 새로 눌러야 합니다.\n\n  [DRM AI v10.0] → [일반 기능] → [하이라이트 처리]',
+   hint:'결과를 다 읽지 마세요. 표시된 것만 열어 보면 됩니다.',
+   bar:'리본에서 [ 하이라이트 처리 ] 를 눌러 주세요 — 그만두려면 Esc'},
   {type:'input',title:'하이라이트 키워드 입력 창',def:'‘,’,..,  ,·,나의,내가,나만의,느낌,깨달음,이해함,알게 됨,노력함,기여함,인식함,고찰함,다짐함,유튜브,유튜버,학생,부족,미흡,소극적,대회,대한민국,한국,에서는,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,습니다',
    text:'하이라이트할 키워드를 쉼표(,)로 구분해 입력하세요.\n(실제로는 여러 줄이 들어가는 큰 입력칸이 있는 전용 창입니다)',
    hint:'기본 키워드가 50개 가까이 미리 채워져 있습니다. 전부 지우고  오류 가능성 있음  만 남기세요. 그대로 두면 거의 모든 글자가 빨갛게 됩니다.',
@@ -2453,6 +2680,7 @@ function mountMission(m){
       toast('지금 누를 것은 [ '+MENUWAIT.cmd+' ] 입니다');return;
     }
     const map=m.cmds||{[m.cmd]:0};
+    if(busy){toast('먼저 열려 있는 창을 끝내 주세요. 그만두려면 Esc');return}
     if(cmd in map){ startRun(m,map[cmd]); }
     else{
       const list=Object.keys(map).map(k=>'  · '+k).join('\n');
@@ -2474,6 +2702,7 @@ function mountMission(m){
 }
 function resetSheet(m){
   const old=SHEETS[m.n];
+  if(typeof cancelRangeBox==='function')cancelRangeBox();
   if(old){ old.destroyed=true; old.cancelPick(); }
   const s=m.make(); SHEETS[m.n]=s;
   s.mount(document.getElementById('sh'+m.n));
@@ -2499,7 +2728,11 @@ async function startRun(m,i){
       } else toast('잘하셨습니다. 아래 자가 진단으로 확인해 보세요');
     }
   }catch(e){ console.error(e); toast('연습창에 문제가 생겼습니다'); }
-  finally{ busy=false; WIZBADGE=''; closeDlg();
+  finally{ busy=false; WIZBADGE='';
+    if(typeof cancelRangeBox==='function')cancelRangeBox();
+    mask().classList.remove('pick');
+    dbox().style.left=dbox().style.top=dbox().style.right=dbox().style.bottom='';
+    closeDlg();
     if(MENUWAIT&&MENUWAIT.n===m.n)MENUWAIT=null;
     setRibbonHot(m.n,Object.keys(m.cmds||{[m.cmd]:0}));
     const sh=SHEETS[m.n];
