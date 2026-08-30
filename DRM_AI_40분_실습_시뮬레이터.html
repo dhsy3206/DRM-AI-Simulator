@@ -212,6 +212,9 @@ table.g td .cellin{width:100%;box-sizing:border-box;border:2px solid var(--excel
 .rbtn .ico{font-size:17px}
 .rbtn:hover{background:var(--blue-l)}
 .rbtn.pulse{animation:pulse 1.5s ease-in-out infinite}
+/* 다음에 누를 실습 단추를 잠깐 강조한다 (② 끝난 뒤 ③ 로 이어 가도록) */
+.btn.pulse{animation:pulse 1.5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.btn.pulse,.rbtn.pulse{animation:none;outline:2px solid var(--blue)}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(46,117,182,.55)}
   50%{box-shadow:0 0 0 7px rgba(46,117,182,0)}}
 
@@ -665,6 +668,7 @@ function resetAll(){
         wireQuiz(m.n,m.quiz,()=>{finish(m.n);toast('미션 '+m.n+' 완료로 표시했습니다')});}
     }catch(e){}
   });
+  clearBtnPulse();
   paint();go(0);toast('처음 상태로 되돌렸습니다')}
 let paused=false;
 function togglePause(){paused=!paused;
@@ -706,8 +710,20 @@ function toggleTheme(){
   else{r.setAttribute('data-theme','dark');toast('어두운 화면');}
 }
 let tmr=null;
-function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
-  clearTimeout(tmr);tmr=setTimeout(()=>e.classList.remove('on'),2600)}
+/* 리본 메뉴 경로 안내는 오래 띄운다. 처음 쓰는 분은 경로가 길어 다 읽기 전에
+   사라지면 헷갈린다. 메뉴를 누르거나 Esc 로 그만두면 waitMenu 가 즉시 내린다. */
+const MENU_TOAST_MS=30000;
+function toast(t,ms){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
+  clearTimeout(tmr);tmr=setTimeout(()=>e.classList.remove('on'),ms||2600)}
+function hideToast(){const e=document.getElementById('toast');if(!e)return;
+  clearTimeout(tmr);e.classList.remove('on')}
+/* 다음에 누를 실습 단추 강조. 되돌리기로 그 단추가 다시 잠기면 깜빡임만 남아
+   눌러도 거절당하므로, 잠긴 단추에는 걸지 않고 되돌릴 때 반드시 지운다. */
+let pulseTmr=null,pulseEl=null;
+function clearBtnPulse(){clearTimeout(pulseTmr);pulseTmr=null;pulseEl=null;
+  document.querySelectorAll('.btn.pulse').forEach(b=>b.classList.remove('pulse'))}
+function markNextBtn(b){clearBtnPulse();pulseEl=b;b.classList.add('pulse');
+  pulseTmr=setTimeout(()=>{b.classList.remove('pulse');pulseEl=null},9000)}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
   .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
@@ -1463,9 +1479,10 @@ function waitMenu(m,cmd,bar){
       const r=rib.getBoundingClientRect(), vh=window.innerHeight||0;
       if(vh&&(r.top<70||r.top>vh-170))pageTo(window.scrollY+r.top-90);
     }
-    toast('리본의 '+pathOf(cmd,grpOf(m.cmd))+' 를 눌러 주세요');
+    toast('리본의 '+pathOf(cmd,grpOf(m.cmd))+' 를 눌러 주세요',MENU_TOAST_MS);
     MENUWAIT={n:m.n,cmd:cmd,cb:v=>{
       escFn=null;
+      hideToast();
       setRibbonHot(m.n,Object.keys(m.cmds||{[m.cmd]:0}));
       const s2=SHEETS[m.n]; if(s2&&!s2.destroyed){s2.hint='';s2.render()}
       res(v);}};
@@ -1665,7 +1682,7 @@ M.push({n:1,title:'행 단위 병렬 처리 — 12명 생기부 문구를 한 �
    hint:'결제를 연결하지 않은 키라면 8, 잘 모르겠으면 8 을 적으세요.', store:'workers',
    check:v=>{const n=+v;return (n>=1&&n<=30)?null:'1~30 사이 숫자를 넣으세요. (기본값 10)'}},
   {type:'msg',title:'URL 확장 모드',icon:'❓',buttons:[['예','y',1],['아니오','n']],
-   text:'셀 텍스트에 포함된 URL의 실제 콘텐츠를\n가져와 분석에 포함할까요?\n\n[예]  Gemini url_context 도구로 URL 접근\n  웹 페이지 / 이미지 / PDF 자동 분석\n  YouTube 공개 영상은 내용 직접 분석(최대 3시간)\n  요청당 최대 20개 URL 지원\n\n[아니오]  URL을 텍스트 문자열로만 취급',
+   text:'셀 텍스트와 첨부 PDF에 있는 URL의 실제\n콘텐츠를 가져와 분석에 포함할까요?\n\n[예]  Gemini url_context 도구로 URL 접근\n  웹 페이지 / 이미지 / PDF 자동 분석\n  첨부 PDF 본문의 URL도 수집(8MB·100쪽 이내)\n  YouTube 공개 영상은 내용 직접 분석(최대 3시간)\n  요청당 최대 20개 URL 지원\n\n[아니오]  URL을 텍스트 문자열로만 취급',
    hint:'이번 자료에는 인터넷 주소가 없습니다. [아니오]를 고르세요.',
    check:v=>v==='n'?null:'이 실습 데이터에는 URL이 없습니다. [아니오]로 진행합니다.'},
   {type:'msg',title:'병렬 처리 설정 확인',icon:'ℹ️',buttons:[['확인','ok',1]],
@@ -2492,8 +2509,8 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
    check:v=>{const n=+v;if(!(n>=1&&n<=30))return '1~30 사이 숫자를 넣으세요.';
      return n<=8?null:'문항 생성은 출력이 깁니다. 5 정도로 낮춰 보세요. (8 이하 권장)'}},
   {type:'msg',title:'URL 확장 모드',icon:'❓',buttons:[['예','y',1],['아니오','n']],
-   text:'셀 텍스트에 포함된 URL의 실제 콘텐츠를\n가져와 분석에 포함할까요?\n\n[예]  Gemini url_context 도구로 URL 접근\n  웹 페이지 / 이미지 / PDF 자동 분석\n  YouTube 공개 영상은 내용 직접 분석(최대 3시간)\n  요청당 최대 20개 URL 지원\n\n[아니오]  URL을 텍스트 문자열로만 취급',
-   hint:'[아니오] 를 누르세요. 이 분류표에는 인터넷 주소가 없습니다. [예] 는 셀 안의 주소를 실제로 열어 그 내용까지 읽어 오는 기능입니다.',
+   text:'셀 텍스트와 첨부 PDF에 있는 URL의 실제\n콘텐츠를 가져와 분석에 포함할까요?\n\n[예]  Gemini url_context 도구로 URL 접근\n  웹 페이지 / 이미지 / PDF 자동 분석\n  첨부 PDF 본문의 URL도 수집(8MB·100쪽 이내)\n  YouTube 공개 영상은 내용 직접 분석(최대 3시간)\n  요청당 최대 20개 URL 지원\n\n[아니오]  URL을 텍스트 문자열로만 취급',
+   hint:'[아니오] 를 누르세요. 이 분류표에는 인터넷 주소가 없습니다. [예] 는 셀이나 첨부 PDF 안의 주소를 실제로 열어 그 내용까지 읽어 오는 기능입니다.',
    check:v=>v==='n'?null:'이 자료에는 URL이 없습니다. [아니오].'},
   {type:'msg',title:'병렬 처리 설정 확인',icon:'ℹ️',buttons:[['확인','ok',1]],
    text:c=>'[설정 요약]\n모델: gemini-3.7-flash (Temperature 미사용)\n행별 개별 처리(배치 1 고정) · 동시 실행: '+(c.workers||5)+'개\n'+wmode(c.workers||5)+'\nThinking Level: high (thinkingConfig 적용)\n\n[URL 확장 모드]\n  [미사용] - URL은 텍스트 문자열로만 처리'},
@@ -2526,7 +2543,7 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
       text:'병렬 처리 완료!\n\n총 행 수: 15  ·  성공 15 / 실패 0\n모델: gemini-3.7-flash\n토큰: 입력 18,240 / 출력 22,860\n예상 비용(USD): $0.099420',
       hint:'연습창은 문항을 줄여 보여 줍니다. 실제로는 자료·선택지·풀이가 모두 한 칸에 들어옵니다.'});
   }}]},
- {label:'② 한글 시험지 만들기',steps:ctx=>[
+ {label:'② 한글 시험지 만들기',next:'시험지가 나왔습니다. 이제 아래 [③ 삽화 만들기] 를 눌러 보세요',steps:ctx=>[
   {type:'pick',title:'한글 파일 생성 범위 선택',want:'G2:G16',
    text:'한글 파일로 보낼 엑셀 범위를 한 열 안에서 마우스로 선택한 뒤 [확인]을 누르세요.\n예: H2:H30처럼 한 열의 연속된 행 범위만 선택하세요.',
    hint:'문항이 들어 있는 G2:G16 을 드래그. 반드시 한 열만 됩니다.',
@@ -2559,6 +2576,10 @@ M.push({n:5,gated:true,title:'시험 출제 풀코스 — 분류표에서 시험
     await msgbox({title:'한글 파일 만들기',icon:'✅',buttons:[['확인','ok',1]],
       text:'한글 파일 생성이 완료되었습니다.\n\n처리 건수: 15\n저장 위치: D:\\2026_평가\\2학기 기말\\2026_2학기_2학년사회_기말고사.hwp',
       hint:'교사용 정답지는 같은 순서를 한 번 더 — 분할 문구에 **정답:** 하나만 적고, 기준 문구 포함 여부를 [예] 로 하면 정답과 풀이만 모인 파일이 나옵니다.'});
+    await msgbox({title:'다음 차례 안내',icon:'💡',buttons:[['확인','ok',1]],
+      real:'실제 추가기능에는 이 창이 없습니다. 다음에 무엇을 할 차례인지 알려 드리려고 연습창이 덧붙인 창입니다.',
+      text:'시험지가 만들어졌습니다.\n\n이제 ③ 삽화 만들기 차례입니다.\n아래 [③ 삽화 만들기] 단추를 눌러\n그림이 필요한 문항에 삽화를 붙여 보세요.\n\n삽화는 심화 과정입니다. 시간이 모자라면\n건너뛰고 아래 자가 진단으로 가셔도 됩니다.',
+      hint:'삽화는 그림이 필요한 행만 골라서 만듭니다. 15행을 모두 돌리면 필요 없는 그림까지 만들어져 값이 나갑니다.'});
   }}]},
  {label:'③ 삽화 만들기',steps:ctx=>[
   {type:'input',title:'[설정 0/8] 모델 선택',def:'1',
@@ -2935,11 +2956,11 @@ M.push({n:6,title:'문항 점검 — 12문항 오류를 3분에',mins:'9분  (�
    hint:'8 을 적으세요. 칸에 들어 있는 10 은 추가기능이 넣어 둔 기본값이라 무료 키에는 조금 높습니다. 결제를 연결한 키라면 20 까지 올려도 됩니다. Rate Limit 오류가 나면 값을 절반으로 낮추세요.',
    check:v=>{const n=+v;return (n>=1&&n<=30)?null:'1~30 사이 숫자를 넣으세요.'}},
   {type:'msg',title:'URL 확장 모드',icon:'❓',buttons:[['예','y',1],['아니오','n']],
-   text:'셀 텍스트에 포함된 URL의 실제 콘텐츠를\n가져와 분석에 포함할까요?\n\n[예]  Gemini url_context 도구로 URL 접근\n  웹 페이지 / 이미지 / PDF 자동 분석\n  YouTube 공개 영상은 내용 직접 분석(최대 3시간)\n  요청당 최대 20개 URL 지원\n\n[아니오]  URL을 텍스트 문자열로만 취급',
+   text:'셀 텍스트와 첨부 PDF에 있는 URL의 실제\n콘텐츠를 가져와 분석에 포함할까요?\n\n[예]  Gemini url_context 도구로 URL 접근\n  웹 페이지 / 이미지 / PDF 자동 분석\n  첨부 PDF 본문의 URL도 수집(8MB·100쪽 이내)\n  YouTube 공개 영상은 내용 직접 분석(최대 3시간)\n  요청당 최대 20개 URL 지원\n\n[아니오]  URL을 텍스트 문자열로만 취급',
    hint:'[아니오] 를 누르세요. B열에는 문항 파일 경로만 있고 인터넷 주소는 없습니다.',
    check:v=>v==='n'?null:'파일 경로만 있으므로 [아니오].'},
   {type:'msg',title:'병렬 처리 설정 확인',icon:'ℹ️',buttons:[['확인','ok',1]],
-   text:c=>'[설정 요약]\n모델: gemini-3.7-flash / thinkingLevel: high\n행별 개별 처리(배치 1 고정) · 동시 실행: '+(c.workers||8)+'개\n'+wmode(c.workers||8)+'\n\n[파일 크기 제한 (행당 총 용량)]\n  Gemini 3.x - 행당 최대 100MB',
+   text:c=>'[설정 요약]\n모델: gemini-3.7-flash (Temperature 미사용)\n행별 개별 처리(배치 1 고정) · 동시 실행: '+(c.workers||8)+'개\n'+wmode(c.workers||8)+'\nThinking Level: high (thinkingConfig 적용)\n\n[URL 확장 모드]\n  [미사용] - URL은 텍스트 문자열로만 처리\n\n[파일 크기 제한 (행당 총 용량)]\n  Gemini 3.x - 행당 최대 100MB\n  종류·개수 무관, 초과 시 일부 파일 자동 건너뜀',
    hint:'넣은 값이 그대로 반영됩니다. 읽고 [확인].'},
   {type:'msg',title:'프롬프트 가져오기 방식 선택',icon:'❓',
    buttons:[['예','y'],['아니오','n',1],['취소','c']],
@@ -3068,7 +3089,9 @@ function mountMission(m){
   wireRibbon('rib'+m.n,cmd=>{
     if(MENUWAIT&&MENUWAIT.n===m.n){
       if(cmd===MENUWAIT.cmd){const cb=MENUWAIT.cb;MENUWAIT=null;cb(cmd);return}
-      toast('지금 누를 것은 [ '+MENUWAIT.cmd+' ] 입니다');return;
+      /* 엉뚱한 메뉴를 눌렀을 때가 경로 안내가 가장 필요한 순간이다.
+         짧게 띄우면 30초짜리 경로 안내를 덮어 지운 뒤 2.6초 만에 사라진다. */
+      toast('지금 누를 것은 [ '+MENUWAIT.cmd+' ] 입니다',MENU_TOAST_MS);return;
     }
     const map=m.cmds||{[m.cmd]:0};
     if(busy){toast('먼저 열려 있는 창을 끝내 주세요. 그만두려면 Esc');return}
@@ -3088,6 +3111,7 @@ function mountMission(m){
     if(m.gated){m._step1=false;
       rb.querySelectorAll('[data-run]').forEach(b=>{
         if(+b.dataset.run){b.disabled=true;b.title='앞 단계를 먼저 끝내세요'}});}
+    clearBtnPulse();
     toast('시트를 처음 상태로 되돌렸습니다. 앞 단계부터 다시 하세요');};
   wireQuiz(m.n,m.quiz,()=>{finish(m.n);toast('미션 '+m.n+' 완료로 표시했습니다')});
 }
@@ -3121,7 +3145,17 @@ async function startRun(m,i){
         const rb=document.getElementById('rb'+m.n);
         rb.querySelectorAll('[data-run]').forEach(b=>{b.disabled=false;b.removeAttribute('title')});
         toast('문항이 만들어졌습니다. 이제 ② 한글 시험지 를 눌러 보세요');
-      } else toast('잘하셨습니다. 아래 자가 진단으로 확인해 보세요');
+      } else {
+        /* run 에 next 가 있으면 그 안내를 쓴다. 없으면 종전 문구.
+           ② 가 끝났는데 "자가 진단으로 가라"고 하면 ③ 삽화를 건너뛰게 된다. */
+        const nx=m.runs[i]&&m.runs[i].next;
+        toast(nx||'잘하셨습니다. 아래 자가 진단으로 확인해 보세요',nx?8000:2600);
+        if(nx){
+          const rb2=document.getElementById('rb'+m.n);
+          const nb=rb2&&rb2.querySelector('[data-run="'+(i+1)+'"]');
+          if(nb&&!nb.disabled)markNextBtn(nb);
+        }
+      }
     }
   }catch(e){ console.error(e); toast('연습창에 문제가 생겼습니다'); }
   finally{ busy=false; WIZBADGE='';
@@ -3129,7 +3163,7 @@ async function startRun(m,i){
     mask().classList.remove('pick');
     dbox().style.left=dbox().style.top=dbox().style.right=dbox().style.bottom='';
     closeDlg();
-    if(MENUWAIT&&MENUWAIT.n===m.n)MENUWAIT=null;
+    if(MENUWAIT&&MENUWAIT.n===m.n){MENUWAIT=null;hideToast();}
     setRibbonHot(m.n,Object.keys(m.cmds||{[m.cmd]:0}));
     const sh=SHEETS[m.n];
     if(sh&&!sh.destroyed&&sh._await)sh.cancelEdit(); }
