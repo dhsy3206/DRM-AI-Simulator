@@ -65,6 +65,55 @@ ol.s li::before{content:counter(c);position:absolute;left:0;top:9px;width:24px;h
 .dl a:hover{text-decoration:underline}
 .tblwrap{overflow-x:auto}
 .foot{color:var(--ink2);font-size:13px;margin-top:34px;padding-top:14px;border-top:1px solid var(--line)}
+/* 5분 영상 재생기: 조작 막대를 영상 위에 덮지 않고 '아래 바깥'에 둔다(브라우저 기본 막대는 영상 하단에 어두운 그림자를 깐다) */
+.gv-player{position:relative;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.gv-stage{position:relative}
+.gv-player video{display:block;width:100%;aspect-ratio:16/9;background:#000}
+.gv-player video:focus-visible{outline:3px solid #5fa3e0;outline-offset:-3px}
+.gv-bigplay{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:72px;height:72px;
+ align-items:center;justify-content:center;padding:0;border:0;border-radius:50%;background:rgba(20,23,26,.85);
+ color:#fff;cursor:pointer}
+.gv-bigplay svg{width:38px;height:38px;fill:currentColor}
+.gv-player.gv-ready.gv-big .gv-bigplay{display:flex}
+.gv-bigplay:hover{background:rgba(46,117,182,.95)}
+.gv-bigplay:focus-visible,.gv-btn:focus-visible,.gv-seek:focus-visible,.gv-rate:focus-visible,.gv-cc:focus-visible{
+ outline:2px solid #8cc0ee;outline-offset:2px}
+.gv-bar{display:none;align-items:center;gap:6px;padding:5px 10px;background:#20262d;color:#fff;font:inherit}
+.gv-player.gv-ready .gv-bar{display:flex}
+.gv-btn{flex:none;display:inline-flex;align-items:center;justify-content:center;width:37px;height:37px;padding:0;
+ border:0;border-radius:50%;background:transparent;color:#fff;cursor:pointer}
+.gv-btn:hover{background:rgba(255,255,255,.16)}
+.gv-btn svg{width:22px;height:22px;fill:currentColor}
+.gv-player.gv-playing .gv-ico-play,.gv-player:not(.gv-playing) .gv-ico-pause,
+.gv-player.gv-muted .gv-ico-vol,.gv-player:not(.gv-muted) .gv-ico-mute,
+.gv-player.gv-fs .gv-ico-fs-in,.gv-player:not(.gv-fs) .gv-ico-fs-out{display:none}
+.gv-time{flex:none;font-size:13px;color:#e6ebf0;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1}
+.gv-seek{flex:1;min-width:0;height:26px;margin:0;padding:0;background:transparent;cursor:pointer;
+ -webkit-appearance:none;appearance:none}
+.gv-seek::-webkit-slider-runnable-track{height:5px;border-radius:3px;
+ background:linear-gradient(to right,#5fa3e0 var(--p,0%),#5b6570 var(--p,0%))}
+.gv-seek::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-4.5px;border:0;
+ border-radius:50%;background:#fff}
+.gv-seek::-moz-range-track{height:5px;border-radius:3px;background:#5b6570}
+.gv-seek::-moz-range-progress{height:5px;border-radius:3px;background:#5fa3e0}
+.gv-seek::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#fff}
+.gv-rate,.gv-cc{flex:none;padding:3px 7px;border:1px solid #4a535c;border-radius:5px;background:#2b333b;color:#fff;
+ font:inherit;font-size:13px;line-height:1.3;cursor:pointer}
+.gv-cc.gv-on{background:#5fa3e0;border-color:#5fa3e0;color:#0b1b2b;font-weight:700}
+.gv-player:fullscreen{display:flex;flex-direction:column;width:100%;height:100%;margin:0;border:0;border-radius:0}
+.gv-player:-webkit-full-screen{display:flex;flex-direction:column;width:100%;height:100%;margin:0;border:0;border-radius:0}
+.gv-player:fullscreen .gv-stage{flex:1;min-height:0}
+.gv-player:-webkit-full-screen .gv-stage{flex:1;min-height:0}
+.gv-player:fullscreen video{height:100%;aspect-ratio:auto;object-fit:contain}
+.gv-player:-webkit-full-screen video{height:100%;aspect-ratio:auto;object-fit:contain}
+@media(pointer:coarse){
+ .gv-seek::-webkit-slider-thumb{width:20px;height:20px;margin-top:-7.5px}
+ .gv-seek::-moz-range-thumb{width:20px;height:20px}}
+@media(max-width:576px){
+ .gv-player{width:calc(100% + 40px);margin-inline:-20px;border-radius:0;border-inline:0}}
+@media(max-width:480px){
+ .gv-bar{gap:4px;padding:4px 8px}
+ .gv-mute,.gv-rate{display:none}}
 </style></head><body><div class="wrap">
 
 <h1>DRM AI 엑셀 추가기능 · 처음 40분</h1>
@@ -76,12 +125,40 @@ ol.s li::before{content:counter(c);position:absolute;left:0;top:9px;width:24px;h
 
 <h2>처음이시라면 — 5분 영상으로 먼저 보기</h2>
 <div class="card">
-<video controls preload="metadata" poster="%EC%95%88%EB%82%B4%EC%98%81%EC%83%81/%ED%8F%AC%EC%8A%A4%ED%84%B0.jpg" style="width:100%;border-radius:8px;background:#000">
+<div class="gv-player gv-big" id="sim-video-player">
+<div class="gv-stage">
+<video controls preload="metadata" playsinline poster="%EC%95%88%EB%82%B4%EC%98%81%EC%83%81/%ED%8F%AC%EC%8A%A4%ED%84%B0.jpg" aria-label="DRM AI 시뮬레이터 사용법 안내 영상 (약 5분, 한국어 자막)">
   <source src="%EC%95%88%EB%82%B4%EC%98%81%EC%83%81/DRM_AI_%EC%8B%9C%EB%AE%AC%EB%A0%88%EC%9D%B4%ED%84%B0_%EC%82%AC%EC%9A%A9%EB%B2%95_%EC%95%88%EB%82%B4.mp4" type="video/mp4">
   <track kind="subtitles" srclang="ko" label="한국어" src="%EC%95%88%EB%82%B4%EC%98%81%EC%83%81/DRM_AI_%EC%8B%9C%EB%AE%AC%EB%A0%88%EC%9D%B4%ED%84%B0_%EC%82%AC%EC%9A%A9%EB%B2%95_%EC%95%88%EB%82%B4.vtt" default>
   이 브라우저는 영상을 재생하지 못합니다. 아래 [실습 시뮬레이터 열기] 단추로 바로 시작하셔도 됩니다.
 </video>
-<p style="font-size:13.5px;color:var(--ink2);margin:8px 0 0">시뮬레이터를 어떻게 쓰는지 5분에 보여 드립니다. 소리를 켜 주세요. 자막이 함께 나옵니다.
+<button type="button" class="gv-bigplay" aria-label="영상 재생"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg></button>
+</div>
+<div class="gv-bar" role="group" aria-label="영상 조작">
+  <button type="button" class="gv-btn gv-play" aria-label="재생">
+    <svg class="gv-ico-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg>
+    <svg class="gv-ico-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+  </button>
+  <span class="gv-time"><span class="gv-cur">0:00</span> / <span class="gv-dur">4:58</span></span>
+  <input type="range" class="gv-seek" min="0" max="1000" step="1" value="0" aria-label="재생 위치">
+  <button type="button" class="gv-cc" aria-pressed="true" aria-label="자막 끄기">자막</button>
+  <select class="gv-rate" aria-label="재생 속도">
+    <option value="0.75">0.75배</option>
+    <option value="1" selected>1배</option>
+    <option value="1.25">1.25배</option>
+    <option value="1.5">1.5배</option>
+  </select>
+  <button type="button" class="gv-btn gv-mute" aria-label="소리 끄기">
+    <svg class="gv-ico-vol" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+    <svg class="gv-ico-mute" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16.5 12A4.5 4.5 0 0 0 14 8v2.2l2.5 2.5V12zM19 12a6.9 6.9 0 0 1-.9 3.4l1.5 1.5A8.9 8.9 0 0 0 21 12a9 9 0 0 0-7-8.8v2.1A7 7 0 0 1 19 12zM4.3 3L3 4.3 7.7 9H3v6h4l5 5v-6.7l4.3 4.3a7 7 0 0 1-2.3 1.2v2.1a9 9 0 0 0 3.6-1.8l2.1 2.1 1.3-1.3L4.3 3zM12 4L9.9 6.1 12 8.2V4z"/></svg>
+  </button>
+  <button type="button" class="gv-btn gv-fsbtn" aria-label="전체 화면">
+    <svg class="gv-ico-fs-in" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5h5v2H7v3H5V5zm9 0h5v5h-2V7h-3V5zM5 14h2v3h3v2H5v-5zm12 0h2v5h-5v-2h3v-3z"/></svg>
+    <svg class="gv-ico-fs-out" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 5h2v4H5V7h2V5zm8 0h2v2h2v2h-4V5zM5 15h4v4H7v-2H5v-2zm10 0h4v2h-2v2h-2v-4z"/></svg>
+  </button>
+</div>
+</div>
+<p style="font-size:13.5px;color:var(--ink2);margin:8px 0 0">시뮬레이터를 어떻게 쓰는지 5분에 보여 드립니다. 소리를 켜 주세요. 자막이 함께 나오며, 아래 막대의 [자막] 단추로 켜고 끌 수 있습니다.
   영상은 시뮬레이터 화면을 그대로 담았으며, 영상 속 판 번호나 문구가 설치하신 판과 조금 달라도 메뉴 이름이 같으면 그대로 따라 하시면 됩니다.</p>
 </div>
 
@@ -313,4 +390,156 @@ ol.s li::before{content:counter(c);position:absolute;left:0;top:9px;width:24px;h
  화면의 판 번호가 설치하신 추가기능과 달라도, 메뉴 이름이 같으면 그대로 따라 하시면 됩니다.<br>
  <b>최종 수정 : 2026-10-25</b></p>
 
+<script>
+/* 5분 영상 재생기: 기본 막대를 끄고 영상 '아래 바깥'에 막대를 둔다. JS 가 안 돌면 기본 막대가 그대로 남는다 */
+(function () {
+  var box = document.getElementById('sim-video-player');
+  if (!box) { return; }
+  var v = box.querySelector('video');
+  var btnPlay = box.querySelector('.gv-play');
+  var big = box.querySelector('.gv-bigplay');
+  var btnMute = box.querySelector('.gv-mute');
+  var btnFs = box.querySelector('.gv-fsbtn');
+  var btnCc = box.querySelector('.gv-cc');
+  var seek = box.querySelector('.gv-seek');
+  var cur = box.querySelector('.gv-cur');
+  var dur = box.querySelector('.gv-dur');
+  var rate = box.querySelector('.gv-rate');
+  if (!v || !btnPlay || !big || !btnMute || !btnFs || !btnCc || !seek || !cur || !dur || !rate) { return; }
+
+  var dragging = false;
+  var track = (v.textTracks && v.textTracks.length) ? v.textTracks[0] : null;
+
+  function fmt(t) {
+    t = Math.max(0, Math.floor(t || 0));
+    var s = t % 60;
+    return Math.floor(t / 60) + ':' + (s < 10 ? '0' : '') + s;
+  }
+  function spoken(t) {
+    t = Math.max(0, Math.floor(t || 0));
+    return Math.floor(t / 60) + '분 ' + (t % 60) + '초';
+  }
+  function fsElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+  function renderCc() {
+    var on = !!track && track.mode === 'showing';
+    btnCc.classList.toggle('gv-on', on);
+    btnCc.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btnCc.setAttribute('aria-label', on ? '자막 끄기' : '자막 켜기');
+  }
+  function render() {
+    var d = v.duration;
+    var known = isFinite(d) && d > 0;
+    var playing = !v.paused && !v.ended;
+    box.classList.toggle('gv-playing', playing);
+    box.classList.toggle('gv-big', !playing && (v.ended || v.currentTime < 0.5));
+    btnPlay.setAttribute('aria-label', playing ? '일시정지' : '재생');
+    cur.textContent = fmt(v.currentTime);
+    if (known) {
+      dur.textContent = fmt(d);
+      if (!dragging) { seek.value = Math.round(v.currentTime / d * 1000); }
+    }
+    seek.style.setProperty('--p', (seek.value / 10) + '%');
+    seek.setAttribute('aria-valuetext', spoken(v.currentTime) + ' / ' + (known ? spoken(d) : '알 수 없음'));
+    var muted = v.muted || v.volume === 0;
+    box.classList.toggle('gv-muted', muted);
+    btnMute.setAttribute('aria-label', muted ? '소리 켜기' : '소리 끄기');
+  }
+  function toggle() {
+    if (v.paused || v.ended) {
+      var p = v.play();
+      if (p && p.catch) { p.catch(function () {}); }
+    } else {
+      v.pause();
+    }
+  }
+  function skip(sec) {
+    var d = v.duration;
+    v.currentTime = Math.min(isFinite(d) ? d : Infinity, Math.max(0, v.currentTime + sec));
+  }
+  function toggleCc() {
+    if (!track) { return; }
+    track.mode = track.mode === 'showing' ? 'hidden' : 'showing';
+    renderCc();
+  }
+  function toggleFs() {
+    if (fsElement()) {
+      var exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) { exit.call(document); }
+      return;
+    }
+    var req = box.requestFullscreen || box.webkitRequestFullscreen;
+    if (req) {
+      var p = req.call(box);
+      if (p && p.catch) { p.catch(function () {}); }
+    } else if (v.webkitEnterFullscreen) {
+      v.webkitEnterFullscreen(); /* 아이폰: 영상만 전체 화면이 되며 그 기기의 기본 막대가 쓰인다 */
+    }
+  }
+  function onFsChange() {
+    var on = fsElement() === box;
+    box.classList.toggle('gv-fs', on);
+    btnFs.setAttribute('aria-label', on ? '전체 화면 닫기' : '전체 화면');
+  }
+
+  try {
+    v.controls = false;
+    v.removeAttribute('controls');
+    v.setAttribute('tabindex', '0');
+
+    ['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata', 'durationchange', 'volumechange', 'seeked', 'emptied']
+      .forEach(function (n) { v.addEventListener(n, render); });
+    v.addEventListener('ratechange', function () { rate.value = String(v.playbackRate); });
+
+    v.addEventListener('click', toggle);
+    big.addEventListener('click', function () { toggle(); v.focus(); });
+    btnPlay.addEventListener('click', toggle);
+    btnMute.addEventListener('click', function () { v.muted = !v.muted; });
+    rate.addEventListener('change', function () { v.playbackRate = parseFloat(rate.value) || 1; });
+    btnFs.addEventListener('click', toggleFs);
+    btnCc.addEventListener('click', toggleCc);
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    if (v.textTracks && v.textTracks.addEventListener) { v.textTracks.addEventListener('change', renderCc); }
+
+    seek.addEventListener('pointerdown', function () { dragging = true; });
+    document.addEventListener('pointerup', function () { dragging = false; });
+    document.addEventListener('pointercancel', function () { dragging = false; });
+    seek.addEventListener('input', function () {
+      var d = v.duration;
+      if (!(isFinite(d) && d > 0)) { return; }
+      v.currentTime = seek.value / 1000 * d;
+      render();
+    });
+    seek.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); skip(-5); }
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); skip(5); }
+    });
+
+    v.addEventListener('keydown', function (e) {
+      if (e.altKey || e.ctrlKey || e.metaKey) { return; }
+      var k = e.key;
+      if (k === ' ' || k === 'k' || k === 'K') { e.preventDefault(); toggle(); }
+      else if (k === 'ArrowLeft') { e.preventDefault(); skip(-5); }
+      else if (k === 'ArrowRight') { e.preventDefault(); skip(5); }
+      else if (k === 'm' || k === 'M') { e.preventDefault(); v.muted = !v.muted; }
+      else if (k === 'c' || k === 'C') { e.preventDefault(); toggleCc(); }
+      else if (k === 'f' || k === 'F') { e.preventDefault(); toggleFs(); }
+    });
+
+    if (!track) { btnCc.style.display = 'none'; }
+    if (!(box.requestFullscreen || box.webkitRequestFullscreen || v.webkitEnterFullscreen)) {
+      btnFs.style.display = 'none';
+    }
+    box.classList.add('gv-ready');
+    renderCc();
+    render();
+  } catch (err) {
+    /* 어떤 이유로든 준비에 실패하면 기본 막대로 되돌린다 */
+    v.controls = true;
+    box.classList.remove('gv-ready');
+  }
+})();
+</script>
 </div></body></html>
